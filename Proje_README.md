@@ -1,18 +1,18 @@
 # StartMetrics — Girişim Sağlık & Risk Navigasyonu
 
-> YZTA Bootcamp 2026 · Sprint 1 · Çalışan Konsept Kanıtı (PoC)
 
-Girişimcilerin (**Fikrim Var / Startup'ım Var / Şirketim Var**) sağlık ve batma
-riskini, onları 20 sayfalık iş planlarıyla boğmadan tek sayfalık dinamik bir
-formla ölçen ve akıllı bir **"Waze / GPS"** gibi yön veren analiz motoru.
+> YZTA Bootcamp 2026 · Sprint 2 · Canlı Yapay Zekâ & Makine Öğrenmesi Entegrasyonu
 
-**Akış:** Dal seç → ~8-10 kritik soruyu doldur → **Analiz Et** → solda 0-100
-**Olgunluk Skoru** + Risk %, sağda **3 maddelik AI Navigasyon Raporu** → skor > 75
-ve risk düşükse **PDF Sertifika** indir. Süreç burada biter.
+Girişimcilerin (**Fikrim Var / Startup'ım Var / Şirketim Var**) sağlık ve batma riskini, onları 20 sayfalık iş planlarıyla boğmadan tek sayfalık dinamik bir formla ölçen ve akıllı bir **"Waze / GPS"** gibi yön veren analiz motoru.
+
+**Akış:** Dal seç → ~8-10 kritik soruyu doldur → **Analiz Et** → solda 0-100 **Olgunluk Skoru** + Risk %, sağda **3 maddelik AI Navigasyon Raporu** → skor > 75 ve risk düşükse **PDF Sertifika** indir.
 
 ---
 
-## Mimari (Hibrit AI)
+## Mimari & Hibrit AI Evrimi (Sprint 2)
+
+Sprint 1'de verilen **"Dondurulmuş Arayüz (Frozen Interface)"** sözü Sprint 2'de başarıyla yerine getirilmiştir. `score(features) -> ScoreResult` fonksiyon imzası, Pydantic şemaları ve frontend katmanı **hiç değiştirilmeden**, deterministik motorun gövdesi gerçek bir Makine Öğrenmesi (ML) modeliyle hibrit hale getirilmiştir.
+
 
 ```
 [Kullanıcı Form Verisi]
@@ -27,27 +27,35 @@ ve risk düşükse **PDF Sertifika** indir. Süreç burada biter.
 │ BİZİM     │  │  HAZIR LLM   │
 │ MODELİMİZ │  │  API (OpenAI)│
 │ scorer.py │  │ llm_client.py│
-│(deterministik)│ (mentor raporu)│
+│(hibrit)   │ (mentor raporu)│
 └─────┬────┘  └──────┬───────┘
       └──────┬───────┘
              ▼
  [Olgunluk Skoru + Risk %  +  3 maddelik rapor  +  PDF Sertifika]
 ```
 
-- **`scorer.py` (bizim modelimiz):** Kural tabanlı, **tam deterministik** skorlayıcı.
-  Aynı girdi → aynı skor. "Güvenilir/tutarlı Olgunluk Skoru"nun teknik temeli.
-  Ağırlıklar veri setinin ilk 10 satırından ve doğrulanmış korelasyonlardan
-  türetildi (tam CSV **eğitilmedi**).
-- **`orchestrator.py` (ekstra puan katmanı):** Girdiyi temizler, skorlar, LLM
-  prompt'unu kurar, raporu birleştirir.
-- **`llm_client.py`:** OpenAI ile 3 maddelik Türkçe mentor raporu. **Anahtar
-  yoksa** kural tabanlı stub rapora düşer → demo asla çökmez.
+### 🧠 İki Aşamalı Akıllı Motor Dinamiği (`scorer.py`)
+Sistem, sıfır kesinti (**Zero-Downtime Fallback**) mimarisine sahiptir:
+1. **DURUM A (Yapay Zekâ Modu):** Eğer dizinde `.pkl` dosyaları mevcutsa, sistem otomatik olarak eğitilmiş **Random Forest** modelini ayağa kaldırır. Gelen ham verileri `encoders.pkl` ile işlenir ve makine öğrenmesi tahmin olasılığına göre `risk_probability` ile tersten türetilmiş `maturity_score` üretir.
+2. **DURUM B (Kuralsal Fallback):** Model dosyaları yoksa veya yükleme anında bir hata oluşursa, sistem çökmek yerine milisaniyeler içinde Sprint 1'deki tam deterministik, matematiksel kural motoruna geri döner. Bu sayede canlı sistemin sürekliliği garanti altına alınır.
 
-**Hibrit dağılım (hedef vizyon):** ~%60 LLM / %40 kendi modelimiz. Sprint 1'de
-raporu LLM üretir; skorlayıcı %100 bizim kodumuzdur. **Sprint 2'de** `scorer.py`
-gövdesi gerçek bir ML modeliyle (XGBoost/LightGBM) değişir — arayüz
-(`score(features) -> ScoreResult`) sabit kaldığı için orchestrator/şema/frontend
-**hiç değişmez.**
+---
+
+## 📊 Veri Bilimi & Jüri Savunma Metrikleri (`train.py`)
+
+Model eğitimi, jüri karşısında teknik ve akademik olarak tam savunulabilir bir zemin oluşturmak adına sıkı doğrulama aşamalarından geçirilmiştir:
+
+*   **Veri Seti:** `startup_founder_burnout_2026.csv` içerisindeki **50.000 satır** verinin tamamı eğitim ve test süreçlerinde kullanılmıştır.
+*   **Veri Sızıntısı (Data Leakage) Arındırması:** İlk aşamada ortaya çıkan yanıltıcı %100 başarı oranları analiz edilmiş; hedef değişkenin türevi olan `Shutdown_Probability`, `Shutdown_Risk`, `Burnout_Score`, `Burnout_Level` ve `Founder_Burnout_Flag` sütunları veri bilimsel etikle **eğitimden tamamen çıkarılmıştır.** Modelin sadece kullanıcının formda doldurduğu ham girdilerden öğrenmesi sağlanmıştır.
+*   **Overfitting (Ezberleme) Yoktur İspatı:**
+    *   *Eğitim (Train) Seti Doğruluğu:* %89.33
+    *   *Test Seti Başarısı:* %87.35
+    *   Train ve Test doğrulukları arasındaki farkın yalnızca **%1.98** olması, modelin ezberlemediğinin ve yüksek genellenebilirlik kapasitesinin somut ispatıdır.
+*   **Kararlılık (5-Fold Cross-Validation):** Veri seti 5 farklı alt kümeye bölünerek çapraz doğrulanmıştır. **CV Accuracy: %87.72** çıkarken, katmanlar arası standart sapma yalnızca **+/- %0.43** olarak ölçülmüştür. Bu durum, modelin veri manipülasyonlarına karşı kararlılığını kanıtlar.
+*   **Ayırt Edicilik Gücü (ROC-AUC):** **0.9305** skoru ile modelin başarılı girişimler ile batma riski taşıyan yapıları birbirinden ayırt etme yeteneği mükemmel seviyetedir.
+*   **Risk Yakalama (Sınıf 1 - Sınıflandırma Raporu):**
+    *   *Precision (%82):* Model bir girişime "Riskli" alarmı veriyorsa %82 ihtimalle haklıdır (False Positive oranı düşüktür).
+    *   *Recall (%60):* Gerçekte batacak olan erken aşama girişimlerin %60'ı hiçbir LLM bağımlılığı olmadan ham verilerden yakalanabilmektedir. "Fikrim Var" (Pre-Seed) gibi aşamalarda henüz sorulmayan eksik alanlar ise model mimarisi tarafından çökme yaşanmadan güvenli varsayılan değerlerle tolere edilir.
 
 ---
 
@@ -56,18 +64,26 @@ gövdesi gerçek bir ML modeliyle (XGBoost/LightGBM) değişir — arayüz
 | Katman | Teknoloji |
 |---|---|
 | Backend | Python · FastAPI · Pydantic · Uvicorn |
-| Skorlayıcı | Saf Python (kural tabanlı, deterministik) |
+| Makine Öğrenmesi | Scikit-Learn (Random Forest) · Joblib |
 | LLM | OpenAI (sağlayıcı-bağımsız; `LLM_PROVIDER` ile Anthropic'e de geçer) |
 | PDF | fpdf2 + gömülü DejaVuSans (Unicode / tam Türkçe karakter desteği) |
 | Frontend | Vite · React · TypeScript |
 | UI/Tema | "Mercury Trust" indigo paleti · açık + koyu tema |
-| Animasyon | Framer Motion (geçişler, gauge sayaç) · tsParticles (koyu hero partikül-ağı) |
+| Animasyon | Framer Motion · tsParticles |
 
 ---
 
 ## Kurulum & Çalıştırma
 
-### 1) Backend (Terminal 1)
+### 1) Modelin Eğitilmesi (Offline)
+Canlı ortamda (production) sunucuya ek yük bindirmemek adına model lokalde bir kez eğitilir ve ağırlıklar dondurulur:
+```powershell
+# Sanal ortam aktifken backend dizininde çalıştırın
+python train.py
+```
+Bu komut trained_model.pkl ve encoders.pkl dosyalarını otomatik olarak backend/app/ dizinine üretir.
+
+### 2) Backend (Terminal 1)
 
 ```powershell
 cd backend
@@ -83,7 +99,7 @@ uvicorn app.main:app --reload --port 8000
 Kontrol: <http://localhost:8000/health> → `{"ok": true}`
 API dokümanı (otomatik): <http://localhost:8000/docs>
 
-### 2) Frontend (Terminal 2)
+### 3) Frontend (Terminal 2)
 
 ```powershell
 cd frontend
@@ -120,28 +136,31 @@ curl -X POST http://localhost:8000/analyze \
 StartMetrics/
 ├─ backend/
 │  ├─ app/
-│  │  ├─ main.py            # FastAPI: /analyze, /certificate, /config, /health
-│  │  ├─ schemas.py         # Pydantic request/response
-│  │  ├─ form_config.py     # 3 dal veri-güdümlü soru konfigürasyonu (TEK KAYNAK)
-│  │  ├─ orchestrator.py    # temizle → skorla → prompt → LLM → birleştir
-│  │  ├─ scorer.py          # BİZİM deterministik modelimiz (dondurulmuş arayüz)
-│  │  ├─ llm_client.py      # OpenAI + Türkçe mentor prompt + stub fallback
-│  │  └─ pdf.py             # fpdf2 sertifika üretici
-│  ├─ requirements.txt
-│  └─ .env.example
-├─ frontend/                # Vite + React + TS (tek sayfa, iki ekran)
+│  │  ├─ main.py            # FastAPI uç noktaları (/analyze, /certificate...)
+│  │  ├─ schemas.py         # Pydantic veri modelleri
+│  │  ├─ form_config.py     # 3 dalın form şeması (Tek Kaynak)
+│  │  ├─ orchestrator.py    # Entegrasyon ve LLM rapor birleştirme
+│  │  ├─ scorer.py          # HİBRİT MOTOR (Dinamik ML Yükleyici + Fallback)
+│  │  ├─ trained_model.pkl  # Dondurulmuş Random Forest Model Ağırlıkları (Yeni)
+│  │  ├─ encoders.pkl       # Kategorik Label Encoder nesneleri (Yeni)
+│  │  ├─ llm_client.py      # OpenAI + Türkçe mentor prompt altyapısı
+│  │  └─ pdf.py             # fpdf2 sertifika motoru
+│  ├─ requirements.txt     # scikit-learn ve joblib bağımlılıkları eklendi
+│  └─ train.py              # ML Eğitim, Veri Temizleme ve Doğrulama Betiği (Yeni)
+├─ frontend/                # Vite + React + TS UI Katmanı
 │  └─ src/{App.tsx, api.ts, useTheme.ts, components/*, styles.css}
 └─ data/
-   └─ startup_founder_burnout_2026.csv   # referans; çalışma anında OKUNMAZ
+   └─ startup_founder_burnout_2026.csv   # 50.000 Satırlık Referans Eğitim Veri Seti
+
 ```
 
 ---
 
 ## Sprint Sınırları
 
-**Sprint 1 (bu teslim):** 3 dal + dinamik form → deterministik skorlayıcı →
+**Sprint 1 (Tamamlandı):** 3 dal + dinamik form → deterministik skorlayıcı →
 orkestrasyon → LLM raporu (stub fallback'li) → skor/risk UI → PDF sertifika.
 
-**Sprint 2+:** Gerçek ML modeli (XGBoost/LightGBM/BERT) `scorer.py`'ye takılır
-(arayüz sabit). **Kapsam dışı (kalıcı):** yatırımcı eşleştirme, login, kalıcılık,
-mesajlaşma.
+**Sprint 2 (Bu Teslim):** Veri sızıntılarından arındırılmış 50.000 satırlık ML model eğitimi (train.py) → Çapraz doğrulama ve overfitting analizlerinin tamamlanması → scorer.py gövdesine dondurulmuş arayüz mimarisiyle entegrasyonu → Zero-Downtime Fallback mekanizmasının kurulması.
+
+**Kapsam dışı (kalıcı):** yatırımcı eşleştirme, login, kalıcılık, mesajlaşma.

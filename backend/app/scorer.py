@@ -1,16 +1,21 @@
+# scorer.py
 """
 scorer.py — StartMetrics Hibrit Analitik ve ML Model Motoru (Sprint 1 + Sprint 2).
 
 ARAYÜZ DONDURULMUŞTUR: `score(features) -> ScoreResult`.
+Eğer 'trained_model.pkl' mevcutsa, sistem otomatik olarak eğitilmiş Random Forest
+modelini kullanır. Model henüz eğitilmediyse veya dosya silindiyse, sistem 
+hiçbir hata fırlatmadan tam deterministik kural tabanlı modele (Fallback) geri döner.
 """
 
 from __future__ import annotations
 
 import os
-import sys
 from dataclasses import dataclass, field
+import joblib
+import pandas as pd
 
-# Dal başına olgunluk taban ofseti
+# Dal başına olgunluk taban ofseti (Kuralsal model fallback için korundu)
 BRANCH_OFFSET = {
     "Pre-Seed": 6,
     "Seed": 2,
@@ -33,6 +38,7 @@ def _clamp(value: float, low: float, high: float) -> float:
 
 
 def _num(value, default: float) -> float:
+    """Girdiyi float'a çevir; boş/None/hatalıysa nötr varsayılana düş."""
     if value is None or value == "":
         return float(default)
     try:

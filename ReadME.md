@@ -58,7 +58,7 @@ Platformun en büyük ayırt edici gücü, kullanıcıların iş modellerinin ol
 ---
 
 <details>
-  <summary><h2>Sprint 1</h2></summary>
+  <summary><h2>Sprint 1</h2><br><em>Detaylar için tıklayınız</em></summary>
 
 - **Sprint Puanları**
 
@@ -105,15 +105,63 @@ Platformun en büyük ayırt edici gücü, kullanıcıların iş modellerinin ol
 
 
 <details>
-  <summary><h2>Sprint 2</h2></summary>
+  <summary><h2>Sprint 2</h2><br><em>Detaylar için tıklayınız</em></summary>
+
+- **Sprint Puanları**
+
+   Toplam Backlog Puanı: 274 Puan
+
+   Sprint 2 Hedefi: 104 Puan
+
+- **Sprint Board Durumu**
+
+<img width="2376" height="2988" alt="startmetrics_sprint2" src="https://github.com/user-attachments/assets/117b99d8-b398-497b-bd8a-7ad6b0a5dcf0" />
 
 
+- **Ürün Durumu**
+
+
+<img width="3024" height="1764" alt="screencapture-start-metrics-git-utkuynk-start-metrics-vercel-app-2026-07-19-17_18_29" src="https://github.com/user-attachments/assets/60e635ac-d378-4167-ae2c-86026f8c6831" />
+<img width="3024" height="1798" alt="screencapture-start-metrics-git-utkuynk-start-metrics-vercel-app-2026-07-19-17_18_37" src="https://github.com/user-attachments/assets/6a076a8d-5d14-4eae-bdc2-d7ad1c1d7142" />
+<img width="3024" height="2014" alt="screencapture-start-metrics-git-utkuynk-start-metrics-vercel-app-2026-07-19-17_19_08" src="https://github.com/user-attachments/assets/4047db08-2300-4cde-953f-32004c602670" />
+<img width="3024" height="2582" alt="screencapture-start-metrics-git-utkuynk-start-metrics-vercel-app-2026-07-19-17_19_15" src="https://github.com/user-attachments/assets/f60aa390-32f0-4f5c-ac74-7a01cf12ed73" />
+<img width="3024" height="2316" alt="screencapture-start-metrics-git-utkuynk-start-metrics-vercel-app-2026-07-19-17_19_32" src="https://github.com/user-attachments/assets/9219f961-89b2-4440-b8ca-cc7236856c27" />
+<img width="3024" height="4596" alt="screencapture-start-metrics-git-utkuynk-start-metrics-vercel-app-2026-07-19-17_19_57" src="https://github.com/user-attachments/assets/aeb00150-58ce-4c3b-ad5a-21bf72a47cac" />
+
+
+
+
+
+
+
+
+- **Sprint Review**: 
+  * Birden fazla Yapay Zeka Platformunun desteğinin eklenmesinin başlanması
+  * Backlog için Github Projects'in yetersiz olduğuna karar verilmesi
+  * Github PR özelliğinin Vercel alt yapısıyla aktif kullanımı
+  * Github Projects Backlog görüntüsünün asistan geri dönütü üzerine güncellenmesi
+  * Sprint kısımlarının açıp kapanılabilir olduğunun asistan geri dönütü üzerine güncellenmesi
+  * Vercel'de deploy edilen previewların herkes tarafından erişilebilir yapılması
+  * Proje içerisinde test dosyalarının oluşturulması
+  * Proje içerisindeki formların geliştirilmesi
+
+  **Sprint Review Katılımcıları:**
+    - Elif Berber 
+    - Furkan Uysal
+    - Muhammed Esat Demir 
+    - Utku Uyanık
+    - Zeynep Tanrıvermiş
+
+- **Sprint Retrospective:**
+  - Github Projects'in Viewları tek bir veri setine bağlı olduğundan yetersiz olduğunun anlaşılması
+  - Main branşa dökümantasyon geliştirilmeleri dışında review atılmadan commit yapılmaması
+  - Hibrit yapının ilk adımlarının preview özelliği ile bu [bağlantıdan](https://start-metrics-git-utkuynk-start-metrics.vercel.app/) erişilebilir yapılması
 
 </details>
 
 
 <details>
-  <summary><h2>Sprint 3</h2></summary>
+  <summary><h2>Sprint 3</h2><br><em>Detaylar için tıklayınız</em></summary>
 
 </details>
 

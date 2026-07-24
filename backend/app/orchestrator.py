@@ -49,7 +49,7 @@ def _clean(branch: str, raw_answers: dict) -> dict:
     """Form girdisini skorlayıcının beklediği kanonik sözlüğe dönüştürür.
 
     - Funding_Stage'i daldan sabitler (kullanıcı girdisine güvenmeyiz).
-    - number/scale alanlarını float'a çevirir; scale'leri 1-10'a clamp'ler.
+    - number/scale alanlarını float'a çevirir; min/max sınırlarını doğrular.
     - form_config'de tanımlı olmayan fazladan anahtarları yok sayar.
     """
     cfg = get_branch(branch)
@@ -61,8 +61,16 @@ def _clean(branch: str, raw_answers: dict) -> dict:
 
         if field["kind"] in ("number", "scale"):
             value = _to_float(value)
-            if value is not None and field["kind"] == "scale":
-                value = max(1.0, min(10.0, value))
+            if value is not None:
+                min_val = field.get("min")
+                max_val = field.get("max")
+                if min_val is not None and value < min_val:
+                    raise ValueError(f"{field['label']} değeri en az {min_val} olmalıdır.")
+                if max_val is not None and value > max_val:
+                    raise ValueError(f"{field['label']} değeri en fazla {max_val} olmalıdır.")
+                
+                if field["kind"] == "scale":
+                    value = max(1.0, min(10.0, value))
 
         features[key] = value
 

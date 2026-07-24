@@ -674,14 +674,88 @@ button {
   text-align: center;
 }
 
-.error-banner {
+.error-banner-premium {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
   background: var(--risk-high-soft);
   color: var(--risk-high);
-  border: 1px solid var(--risk-high);
-  padding: 12px 16px;
+  border: 1px solid rgba(220, 38, 38, 0.22);
+  box-shadow: 0 8px 24px rgba(220, 38, 38, 0.08);
+  padding: 16px 20px;
   border-radius: var(--radius-sm);
-  margin: 0 0 20px;
-  font-size: 0.92rem;
+  margin: 0 0 24px;
+  position: relative;
+  text-align: left;
+  backdrop-filter: blur(8px);
+}
+
+.error-icon {
+  flex: 0 0 auto;
+  color: var(--risk-high);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.error-content-wrapper {
+  flex: 1 1 auto;
+}
+
+.error-content-wrapper h4 {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--risk-high);
+}
+
+.error-content-wrapper p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--risk-high);
+  opacity: 0.9;
+  line-height: 1.45;
+}
+
+.error-close {
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+  color: var(--risk-high);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  opacity: 0.65;
+  transition: opacity 0.15s;
+  align-self: flex-start;
+  margin-top: -3px;
+}
+
+.error-close:hover {
+  opacity: 1;
+}
+
+/* Custom field validation styling */
+.field input.input-error,
+.field select.input-error {
+  border-color: var(--risk-high);
+  box-shadow: 0 0 0 3px var(--risk-high-soft);
+}
+
+.field input.input-error:focus,
+.field select.input-error:focus {
+  border-color: var(--risk-high);
+  box-shadow: 0 0 0 3px var(--risk-high-soft);
+}
+
+.field-error-msg {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--risk-high);
+  margin-top: 4px;
+  display: block;
 }
 
 @media (prefers-reduced-motion: reduce) {

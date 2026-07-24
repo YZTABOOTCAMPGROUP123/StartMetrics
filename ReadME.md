@@ -162,7 +162,42 @@ Platformun en büyük ayırt edici gücü, kullanıcıların iş modellerinin ol
 
 <details>
   <summary><h2>Sprint 3</h2><br><em>Detaylar için tıklayınız</em></summary>
+  
+  ### 🧠 Makine Öğrenmesi Model Eğitimi ve Kalibrasyon Raporu
 
+StartMetrics platformu, 50.000 girişim verisi üzerinde eğitilmiş, veri sızıntılarından (data leakage) tamamen arındırılmış kararlı bir **Random Forest Classifier** makine öğrenmesi modeli çalıştırmaktadır.
+
+#### 1. Model Başarım ve Kalibrasyon Metrikleri
+
+| Metrik Türü | Başarım Oranı | Açıklama / Jüri Savunma Notu |
+| :--- | :--- | :--- |
+| **Train Seti Accuracy** | **%89.33** | Eğitilen verideki doğruluk oranı. |
+| **Test Seti Accuracy** | **%87.35** | Görülmemiş test verisindeki doğruluk oranı. Train/Test farkı %1.98 olup **Overfitting yoktur**. |
+| **5-Fold CV Accuracy** | **%87.72 (±%0.43)** | Katmanlar arası standart sapması son derece düşük, kararlı model göstergesi. |
+| **Test ROC-AUC Skoru** | **0.9305** | Modelin "Başarılı" ve "Batma Riski" olan şirketleri ayırt etme yeteneği mükemmel seviyededir. |
+| **Batma Riski Precision**| **%82.00** | Model bir girişime "Batma Riski Var" dediğinde %82 oranında haklıdır (Yanlış alarm oranı %18). |
+| **Batma Riski Recall** | **%60.00** | Gerçekte batacak olan girişimlerin %60'ı ham form girdilerinden başarıyla öngörülmektedir. |
+
+#### 2. Sınıflandırma Detay Raporu (Classification Report)
+
+                     precision    recall  f1-score   support
+    
+       Başarılı (0)       0.88      0.96      0.92      7627
+    Batma Riski (1)       0.82      0.60      0.69      2373
+    
+           accuracy                           0.87     10000
+          macro avg       0.85      0.78      0.81     10000
+       weighted avg       0.87      0.87      0.87     10000
+
+#### 3. Model Doğrulama ve Kalibrasyon Eğrisi (ROC-AUC)
+
+![Model Kalibrasyon Eğrisi](../model_egitimi/model_calibration_roc.jpg)
+
+#### 4. Model Açıklanabilirliği (Explainable AI - XAI / Feature Importance)
+
+Model bir kara kutu (black box) olarak çalışmaz. Modelin kararlarını en çok etkileyen girişim parametreleri aşağıdaki gibidir:
+
+![Feature Importance Görseli](../model_egitimi/feature_importance.png)
 </details>
 
 ---

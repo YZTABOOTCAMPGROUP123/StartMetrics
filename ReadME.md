@@ -169,7 +169,7 @@ StartMetrics platformu, 50.000 girişim verisi üzerinde eğitilmiş, veri sız�
 
 #### 1. Model Başarım ve Kalibrasyon Metrikleri
 
-| Metrik Türü | Başarım Oranı | Açıklama / Jüri Savunma Notu |
+| Metrik Türü | Başarım Oranı | Açıklama |
 | :--- | :--- | :--- |
 | **Train Seti Accuracy** | **%89.33** | Eğitilen verideki doğruluk oranı. |
 | **Test Seti Accuracy** | **%87.35** | Görülmemiş test verisindeki doğruluk oranı. Train/Test farkı %1.98 olup **Overfitting yoktur**. |
@@ -191,13 +191,12 @@ StartMetrics platformu, 50.000 girişim verisi üzerinde eğitilmiş, veri sız�
 
 #### 3. Model Doğrulama ve Kalibrasyon Eğrisi (ROC-AUC)
 
-![Model Kalibrasyon Eğrisi](../model_egitimi/model_calibration_roc.jpg)
+![Model Kalibrasyon Eğrisi](./model_egitimi/model_calibration_roc.png)
 
 #### 4. Model Açıklanabilirliği (Explainable AI - XAI / Feature Importance)
 
-Model bir kara kutu (black box) olarak çalışmaz. Modelin kararlarını en çok etkileyen girişim parametreleri aşağıdaki gibidir:
+![Feature Importance Görseli](./model_egitimi/feature_importance.png)
 
-![Feature Importance Görseli](../model_egitimi/feature_importance.png)
 </details>
 
 ---

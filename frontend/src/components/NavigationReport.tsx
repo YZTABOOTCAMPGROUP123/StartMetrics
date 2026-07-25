@@ -1,9 +1,7 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
 import type { AnalysisResponse } from "../api";
-import { downloadCertificate } from "../api";
 
-// Sağ panel: 3 maddelik Waze/GPS tarzı AI Navigasyon Raporu (staggered) + sertifika.
+// Sağ panel: 3 maddelik Waze/GPS tarzı AI Navigasyon Raporu (staggered). (Sertifika butonu 5. adıma taşındı)
 
 interface Props {
   result: AnalysisResponse;
@@ -12,17 +10,6 @@ interface Props {
 }
 
 export default function NavigationReport({ result, branch, answers }: Props) {
-  const [downloading, setDownloading] = useState(false);
-
-  async function handleDownload() {
-    setDownloading(true);
-    try {
-      await downloadCertificate(branch, answers);
-    } finally {
-      setDownloading(false);
-    }
-  }
-
   return (
     <div className="card panel">
       <h3 className="panel-title">Navigasyon Raporu</h3>
@@ -45,23 +32,6 @@ export default function NavigationReport({ result, branch, answers }: Props) {
           </motion.li>
         ))}
       </ol>
-
-      {result.certificate_available ? (
-        <motion.button
-          className="cert-btn"
-          onClick={handleDownload}
-          disabled={downloading}
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          {downloading ? "Hazırlanıyor…" : "🏆 Güvenirlik Sertifikasını İndir (PDF)"}
-        </motion.button>
-      ) : (
-        <p className="cert-hint">
-          🔒 Sertifika için Olgunluk Skoru 75 üstü ve risk düşük olmalı.
-        </p>
-      )}
     </div>
   );
 }

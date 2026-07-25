@@ -11,7 +11,6 @@ import {
 import { useTheme } from "./useTheme";
 import ParticleBackground from "./components/ParticleBackground";
 import DynamicForm from "./components/DynamicForm";
-import ScoreCard from "./components/ScoreCard";
 import NavigationReport from "./components/NavigationReport";
 import MethodologyForm, { METHODOLOGY_CONFIGS } from "./components/MethodologyForm";
 import ComprehensiveResult from "./components/ComprehensiveResult";
@@ -109,14 +108,17 @@ export default function App() {
     setError(null);
   }
 
-  // Adım 1 → 2: /api/analyze çağrısı (mevcut, dokunulmadı)
+// Adım 1 → 2: /api/analyze çağrısı (mevcut, dokunulmadı)
   async function handleAnalyze() {
     if (!branch) return;
     setLoading(true);
     setError(null);
     try {
       const result = await analyze(branch, answers);
+      
+      // Orijinal backend verisini doğrudan sisteme veriyoruz
       setAnalysisResult(result);
+      
       setStep(2);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Bir hata oluştu");
@@ -295,12 +297,11 @@ export default function App() {
           {step === 2 && analysisResult && (
             <motion.div
               key="step2-result"
-              className="result-grid"
+              style={{ display: "flex", justifyContent: "center", width: "100%", maxWidth: "800px", margin: "0 auto" }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <ScoreCard result={analysisResult} />
               <div className="nav-report-wrapper">
                 <NavigationReport result={analysisResult} branch={branch} answers={answers} />
                 <motion.button

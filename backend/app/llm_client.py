@@ -80,16 +80,7 @@ def generate_report(branch: str, features: dict, result: ScoreResult) -> dict:
     provider, api_key = _resolve_provider()
 
     if not provider or not api_key:
-        stub = _stub_report(result)
-        stub["debug"] = {
-            "reason": "no_provider_or_key",
-            "LLM_PROVIDER_env": os.getenv("LLM_PROVIDER"),
-            "has_OPENAI_API_KEY": bool(os.getenv("OPENAI_API_KEY")),
-            "has_ANTHROPIC_API_KEY": bool(os.getenv("ANTHROPIC_API_KEY")),
-            "has_GEMINI_API_KEY": bool(os.getenv("GEMINI_API_KEY")),
-            "has_OPENROUTER_API_KEY": bool(os.getenv("OPENROUTER_API_KEY")),
-        }
-        return stub
+        return _stub_report(result)
 
     try:
         user_prompt = _build_user_prompt(branch, features, result)
@@ -103,17 +94,12 @@ def generate_report(branch: str, features: dict, result: ScoreResult) -> dict:
             text = _call_openrouter(user_prompt)
         else:
             return _stub_report(result)
+
         items = _parse_three_items(text)
         return {"items": items, "source": "llm"}
-    except Exception as e:
-        stub = _stub_report(result)
-        stub["debug"] = {
-            "reason": "exception",
-            "provider_selected": provider,
-            "error_type": type(e).__name__,
-            "error_message": str(e)[:300],
-        }
-        return stub
+    except Exception:
+        # Ağ/parse/kota — ne olursa olsun demo çalışsın.
+        return _stub_report(result)
 
 
 def _build_user_prompt(branch: str, features: dict, result: ScoreResult) -> str:

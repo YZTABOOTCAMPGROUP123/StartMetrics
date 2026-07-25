@@ -38,7 +38,7 @@ class AnalysisResponse(BaseModel):
     certificate_available: bool
     # "llm" | "stub" — dürüstlük bayrağı; UI'da gösterilmez, teşhis içindir.
     report_source: str
-
+    debug: Optional[dict] = Non # yeni eklendi.
 
 # ---------------------------------------------------------------------------
 # Kapsamlı Rapor (Adım 5) — tüm adımların verisi birleştirilir

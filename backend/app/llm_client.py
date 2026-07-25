@@ -97,9 +97,12 @@ def generate_report(branch: str, features: dict, result: ScoreResult) -> dict:
 
         items = _parse_three_items(text)
         return {"items": items, "source": "llm"}
-    except Exception:
-        # Ağ/parse/kota — ne olursa olsun demo çalışsın.
-        return _stub_report(result)
+    except Exception as e:
+        # Ağ/parse/kota hatasını ekrana yansıt
+        stub = _stub_report(result)
+        stub["items"][0]["title"] = "SİSTEM HATASI"
+        stub["items"][0]["body"] = f"Hata Detayı: {type(e).__name__} - {str(e)}"
+        return stub
 
 
 def _build_user_prompt(branch: str, features: dict, result: ScoreResult) -> str:
@@ -285,8 +288,11 @@ def generate_comprehensive_report(
             return _stub_comprehensive_report(score_result)
 
         return {"roadmap": text.strip(), "source": "llm"}
-    except Exception:
-        return _stub_comprehensive_report(score_result)
+    except Exception as e:
+        stub = _stub_comprehensive_report(score_result)
+        hata_mesaji = f"\n\n### 🚨 HATA DETAYI (Geliştirici Logu)\n**Hata Türü:** `{type(e).__name__}`\n**Açıklama:** `{str(e)}`"
+        stub["roadmap"] = hata_mesaji + "\n\n" + stub["roadmap"]
+        return stub
 
 
 def _build_comprehensive_prompt(

@@ -98,12 +98,20 @@ def generate_report(branch: str, features: dict, result: ScoreResult) -> dict:
         items = _parse_three_items(text)
         return {"items": items, "source": "llm"}
     except Exception as e:
-        # Ağ/parse/kota hatasını ekrana yansıt
-        stub = _stub_report(result)
-        stub["items"][0]["title"] = "SİSTEM HATASI"
-        stub["items"][0]["body"] = f"Hata Detayı: {type(e).__name__} - {str(e)}"
-        return stub
+        import traceback
+        tb_lines = traceback.format_exc().strip().split('\n')
+        # Hata silsilesinin en dibindeki asıl ağ hatasını yakala
+        core_error = tb_lines[-1] if len(tb_lines) > 0 else "Bilinmeyen Traceback"
+        cause = str(getattr(e, '__cause__', 'Alt neden bulunamadı'))
 
+        stub = _stub_report(result)
+        stub["items"][0]["title"] = "🚨 BAĞLANTI NEDENİ"
+        stub["items"][0]["body"] = cause
+        
+        stub["items"][1]["title"] = "🕵️ TRACEBACK KÖKÜ"
+        stub["items"][1]["body"] = core_error
+        
+        return stub
 
 def _build_user_prompt(branch: str, features: dict, result: ScoreResult) -> str:
     """Prompt'a sadece askable alanlar + skor girer (CSV satırı ASLA)."""

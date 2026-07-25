@@ -42,7 +42,6 @@ def analyze(branch: str, raw_answers: dict) -> AnalysisResponse:
         navigation_report=[NavigationItem(**item) for item in report["items"]],
         certificate_available=certificate_available,
         report_source=report["source"],
-        debug=report.get("debug"),   # yeni eklendi.
     )
 
 

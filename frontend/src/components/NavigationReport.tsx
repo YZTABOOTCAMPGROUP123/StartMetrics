@@ -9,7 +9,7 @@ interface Props {
   answers: Record<string, string | number>;
 }
 
-export default function NavigationReport({ result, branch, answers }: Props) {
+export default function NavigationReport({ result }: Props) {
   return (
     <div className="card panel">
       <h3 className="panel-title">Navigasyon Raporu</h3>

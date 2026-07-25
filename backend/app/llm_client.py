@@ -134,7 +134,7 @@ def _call_openai(user_prompt: str) -> str:
     from openai import OpenAI
 
     client = OpenAI()  # OPENAI_API_KEY env'den okunur
-    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    model = os.getenv("OPENAI_MODEL", "gpt-4o")
     resp = client.chat.completions.create(
         model=model,
         max_tokens=400,
@@ -336,7 +336,7 @@ def _build_comprehensive_prompt(
 def _call_openai_comprehensive(user_prompt: str) -> str:
     from openai import OpenAI
     client = OpenAI()
-    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    model = os.getenv("OPENAI_MODEL", "gpt-4o")
     resp = client.chat.completions.create(
         model=model,
         max_tokens=1500,

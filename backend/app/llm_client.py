@@ -17,6 +17,8 @@ import json
 import logging
 import os
 import traceback
+import urllib.request
+import urllib.error
 
 from .scorer import ScoreResult
 
@@ -123,20 +125,30 @@ def _build_user_prompt(branch: str, features: dict, result: ScoreResult) -> str:
 
 
 def _call_openai(user_prompt: str) -> str:
-    from openai import OpenAI
-
-    client = OpenAI()  # OPENAI_API_KEY env'den okunur
+    """OpenAI API'yi urllib stdlib ile çağırır (openai SDK bypass — Vercel uyumu)."""
+    api_key = os.getenv("OPENAI_API_KEY", "")
     model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-    resp = client.chat.completions.create(
-        model=model,
-        max_tokens=400,
-        temperature=0.5,
-        messages=[
+    payload = json.dumps({
+        "model": model,
+        "max_tokens": 400,
+        "temperature": 0.5,
+        "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
         ],
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.openai.com/v1/chat/completions",
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+        method="POST",
     )
-    return resp.choices[0].message.content or ""
+    with urllib.request.urlopen(req, timeout=25) as resp:
+        body = json.loads(resp.read().decode("utf-8"))
+    return body["choices"][0]["message"]["content"] or ""
 
 
 def _call_anthropic(user_prompt: str) -> str:
@@ -327,19 +339,30 @@ def _build_comprehensive_prompt(
 
 
 def _call_openai_comprehensive(user_prompt: str) -> str:
-    from openai import OpenAI
-    client = OpenAI()
+    """OpenAI API'yi urllib stdlib ile çağırır (openai SDK bypass — Vercel uyumu)."""
+    api_key = os.getenv("OPENAI_API_KEY", "")
     model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-    resp = client.chat.completions.create(
-        model=model,
-        max_tokens=1500,
-        temperature=0.6,
-        messages=[
+    payload = json.dumps({
+        "model": model,
+        "max_tokens": 1500,
+        "temperature": 0.6,
+        "messages": [
             {"role": "system", "content": COMPREHENSIVE_SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
         ],
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.openai.com/v1/chat/completions",
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+        method="POST",
     )
-    return resp.choices[0].message.content or ""
+    with urllib.request.urlopen(req, timeout=45) as resp:
+        body = json.loads(resp.read().decode("utf-8"))
+    return body["choices"][0]["message"]["content"] or ""
 
 
 def _call_anthropic_comprehensive(user_prompt: str) -> str:

@@ -3,6 +3,8 @@ pydantic>=2.6
 python-dotenv>=1.0
 fpdf2>=2.7
 openai>=1.30
-httpx==0.27.0 # yeni eklendi
 joblib>=1.3.2
-scikit-learn==1.7.2 # yeni eklendi
+scikit-learn==1.3 # yeni eklendi
+numpy>=1.26 # yeni eklendi
+pandas>=2.0 # yeni eklendi
+httpx==0.24 # yeni eklendi

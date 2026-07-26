@@ -10,9 +10,14 @@ gömüp LLM'den navigasyon raporu almak. Sadece Vercel Environment Variables
 from __future__ import annotations
 
 import json
+import logging
 import os
+import traceback
 
 from .scorer import ScoreResult
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 SYSTEM_PROMPT = (
@@ -33,6 +38,14 @@ def _resolve_provider() -> tuple[str, str | None]:
     Öncelik sırası: OpenAI -> Anthropic -> Gemini -> OpenRouter
     Returns: (provider_name, api_key)
     """
+    # Debug: hangi key'lerin mevcut olduğunu logla (değerleri gizle)
+    available = [
+        k for k in ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "OPENROUTER_API_KEY"]
+        if os.environ.get(k)
+    ]
+    print(f"[LLM] _resolve_provider: mevcut key'ler = {available}", flush=True)
+    logger.info("[LLM] _resolve_provider: mevcut key'ler = %s", available)
+
     if os.environ.get("OPENAI_API_KEY"):
         return "openai", os.environ.get("OPENAI_API_KEY")
     if os.environ.get("ANTHROPIC_API_KEY"):
@@ -42,6 +55,8 @@ def _resolve_provider() -> tuple[str, str | None]:
     if os.environ.get("OPENROUTER_API_KEY"):
         return "openrouter", os.environ.get("OPENROUTER_API_KEY")
     
+    print("[LLM] _resolve_provider: HİÇBİR API KEY BULUNAMADI — stub döndürülecek", flush=True)
+    logger.warning("[LLM] _resolve_provider: hiçbir API key bulunamadı")
     return "", None
 
 
@@ -69,9 +84,12 @@ def generate_report(branch: str, features: dict, result: ScoreResult) -> dict:
         items = _parse_three_items(text)
         return {"items": items, "source": "llm"}
     except Exception as e:
+        tb = traceback.format_exc()
+        logger.error("[LLM] generate_report HATA: %s\n%s", e, tb)
+        print(f"[LLM ERROR] generate_report: {type(e).__name__}: {e}\n{tb}", flush=True)
         stub = _stub_report(result)
         stub["items"][0]["title"] = "SİSTEM HATASI"
-        stub["items"][0]["body"] = f"Hata Detayı: {type(e).__name__} - {str(e)}"
+        stub["items"][0]["body"] = f"{type(e).__name__}: {str(e)}"
         return stub
 
 def _build_user_prompt(branch: str, features: dict, result: ScoreResult) -> str:
@@ -241,8 +259,11 @@ def generate_comprehensive_report(
 
         return {"roadmap": text.strip(), "source": "llm"}
     except Exception as e:
+        tb = traceback.format_exc()
+        logger.error("[LLM] generate_comprehensive_report HATA: %s\n%s", e, tb)
+        print(f"[LLM ERROR] generate_comprehensive_report: {type(e).__name__}: {e}\n{tb}", flush=True)
         stub = _stub_comprehensive_report(score_result)
-        hata_mesaji = f"\n\n### 🚨 HATA DETAYI (Geliştirici Logu)\n**Hata Türü:** `{type(e).__name__}`\n**Açıklama:** `{str(e)}`"
+        hata_mesaji = f"\n\n### 🚨 HATA DETAYI\n**Tür:** `{type(e).__name__}`\n**Açıklama:** `{str(e)}`"
         stub["roadmap"] = hata_mesaji + "\n\n" + stub["roadmap"]
         return stub
 

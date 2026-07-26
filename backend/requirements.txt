@@ -40,5 +40,3 @@ tzdata==2026.3
 uvicorn==0.50.0
 watchfiles==1.2.0
 websockets==16.0
-google-genai==2.11.0
-anthropic==0.29.0

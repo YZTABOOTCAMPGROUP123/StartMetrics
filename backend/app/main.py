@@ -52,7 +52,13 @@ api = APIRouter(prefix="/api")
 
 @api.get("/health")
 def health():
-    return {"ok": True}
+    import os
+    # Hangi LLM key'lerinin runtime'da mevcut olduğunu göster (değerleri gizle)
+    llm_keys = {
+        k: bool(os.environ.get(k))
+        for k in ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "OPENROUTER_API_KEY"]
+    }
+    return {"ok": True, "llm_keys": llm_keys}
 
 
 @api.get("/config")

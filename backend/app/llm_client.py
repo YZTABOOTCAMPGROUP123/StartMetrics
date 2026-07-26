@@ -1,17 +1,26 @@
 """
-llm_client.py — AI Yön Raporu üretici (Vercel Optimize Edilmiş)
+llm_client.py — AI Yön Raporu üretici (OpenAI + sağlayıcı-bağımsız + stub fallback).
 
-Sorumluluk: Skorlayıcının çıktısını ve alanları Türkçe mentor prompt'una
-gömüp LLM'den navigasyon raporu almak. Sadece Vercel Environment Variables
-(Ortam Değişkenleri) üzerinden çalışır.
+Sorumluluk: skorlayıcının çıktısını ve ~8-10 alanı bir Türkçe mentor prompt'una
+gömüp LLM'den TAM 3 maddelik Waze/GPS tarzı bir navigasyon raporu almak.
+
+Token tasarrufu: prompt'a SADECE alanlar + skor girer; ASLA CSV satırı girmez.
+max_tokens düşük tutulur, tıklama başına tek çağrı yapılır.
+
+Dayanıklılık: API anahtarı yoksa VEYA çağrı/parse hatası olursa `_stub_report`
+devreye girer — demo asla çökmez, UI birebir aynı görünür (report_source="stub").
 """
 
 from __future__ import annotations
 
 import json
+import logging
 import os
+import traceback
 
 from .scorer import ScoreResult
+
+logger = logging.getLogger(__name__)
 
 
 SYSTEM_PROMPT = (
@@ -26,26 +35,53 @@ SYSTEM_PROMPT = (
     'döndür: [{"title": "...", "body": "..."}, ...] — tam 3 eleman, başka metin yok.'
 )
 
+
 def _resolve_provider() -> tuple[str, str | None]:
+    """Kullanılacak provider ve api_key'i belirler.
+
+    Önce LLM_PROVIDER env'e bakar. Eğer o provider'a ait key yoksa
+    ya da provider tanımsızsa, mevcut api key'e göre otomatik seçer.
+    Returns: (provider_name, api_key) — api_key None ise stub kullan.
     """
-    Sadece Vercel Environment Variables'a bakarak API anahtarını bulur.
-    Öncelik sırası: OpenAI -> Anthropic -> Gemini -> OpenRouter
-    Returns: (provider_name, api_key)
-    """
-    if os.environ.get("OPENAI_API_KEY"):
-        return "openai", os.environ.get("OPENAI_API_KEY")
-    if os.environ.get("ANTHROPIC_API_KEY"):
-        return "anthropic", os.environ.get("ANTHROPIC_API_KEY")
-    if os.environ.get("GEMINI_API_KEY"):
-        return "gemini", os.environ.get("GEMINI_API_KEY")
-    if os.environ.get("OPENROUTER_API_KEY"):
-        return "openrouter", os.environ.get("OPENROUTER_API_KEY")
-    
+    openai_key = os.getenv("OPENAI_API_KEY")
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    openrouter_key = os.getenv("OPENROUTER_API_KEY")
+
+    configured_provider = os.getenv("LLM_PROVIDER", "").lower().strip()
+
+    # Provider env'i açıkça set edilmişse ve ilgili key varsa onu kullan
+    if configured_provider == "openai" and openai_key:
+        return "openai", openai_key
+    if configured_provider == "anthropic" and anthropic_key:
+        return "anthropic", anthropic_key
+    if configured_provider == "gemini" and gemini_key:
+        return "gemini", gemini_key
+    if configured_provider == "openrouter" and openrouter_key:
+        return "openrouter", openrouter_key
+
+    # Provider env'i set edilmemiş ya da o provider'a key yok:
+    # mevcut key'e göre otomatik seç (öncelik sırası)
+    if openai_key:
+        return "openai", openai_key
+    if anthropic_key:
+        return "anthropic", anthropic_key
+    if gemini_key:
+        return "gemini", gemini_key
+    if openrouter_key:
+        return "openrouter", openrouter_key
+
+    # Hiçbir key yok
     return "", None
 
 
 def generate_report(branch: str, features: dict, result: ScoreResult) -> dict:
-    """3 maddelik navigasyon raporu üretir."""
+    """3 maddelik navigasyon raporu üretir.
+
+    Returns:
+        {"items": [{"title","body"} x3], "source": "llm" | "stub"}
+    Bu fonksiyon hiçbir zaman exception fırlatmaz; hata durumunda stub'a düşer.
+    """
     provider, api_key = _resolve_provider()
 
     if not provider or not api_key:
@@ -53,27 +89,28 @@ def generate_report(branch: str, features: dict, result: ScoreResult) -> dict:
 
     try:
         user_prompt = _build_user_prompt(branch, features, result)
-        
         if provider == "openai":
-            text = _call_openai(user_prompt, api_key)
+            text = _call_openai(user_prompt)
         elif provider == "anthropic":
-            text = _call_anthropic(user_prompt, api_key)
+            text = _call_anthropic(user_prompt)
         elif provider == "gemini":
-            text = _call_gemini(user_prompt, api_key)
+            text = _call_gemini(user_prompt)
         elif provider == "openrouter":
-            text = _call_openrouter(user_prompt, api_key)
+            text = _call_openrouter(user_prompt)
         else:
             return _stub_report(result)
 
         items = _parse_three_items(text)
         return {"items": items, "source": "llm"}
-    except Exception as e:
-        stub = _stub_report(result)
-        stub["items"][0]["title"] = "SİSTEM HATASI"
-        stub["items"][0]["body"] = f"Hata Detayı: {type(e).__name__} - {str(e)}"
-        return stub
+    except Exception as exc:  # noqa: BLE001
+        # Ağ/parse/kota — ne olursa olsun demo çalışsın.
+        logger.error("[llm_client] generate_report hatası (provider=%s): %s", provider, traceback.format_exc())
+        return _stub_report(result)
+
 
 def _build_user_prompt(branch: str, features: dict, result: ScoreResult) -> str:
+    """Prompt'a sadece askable alanlar + skor girer (CSV satırı ASLA)."""
+    # Dahili yardımcı anahtarları (alt çizgiyle başlayan) prompt'a koyma.
     public = {k: v for k, v in features.items() if not k.startswith("_")}
     return (
         f"Dal: {branch}\n"
@@ -85,11 +122,11 @@ def _build_user_prompt(branch: str, features: dict, result: ScoreResult) -> str:
     )
 
 
-def _call_openai(user_prompt: str, api_key: str) -> str:
+def _call_openai(user_prompt: str) -> str:
     from openai import OpenAI
-    client = OpenAI(api_key=api_key)
-    model = os.environ.get("OPENAI_MODEL", "gpt-4o")
-    
+
+    client = OpenAI()  # OPENAI_API_KEY env'den okunur
+    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     resp = client.chat.completions.create(
         model=model,
         max_tokens=400,
@@ -102,11 +139,11 @@ def _call_openai(user_prompt: str, api_key: str) -> str:
     return resp.choices[0].message.content or ""
 
 
-def _call_anthropic(user_prompt: str, api_key: str) -> str:
+def _call_anthropic(user_prompt: str) -> str:
     import anthropic
-    client = anthropic.Anthropic(api_key=api_key)
-    model = os.environ.get("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
-    
+
+    client = anthropic.Anthropic()  # ANTHROPIC_API_KEY env'den okunur
+    model = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5")
     msg = client.messages.create(
         model=model,
         max_tokens=400,
@@ -116,12 +153,16 @@ def _call_anthropic(user_prompt: str, api_key: str) -> str:
     return "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")
 
 
-def _call_gemini(user_prompt: str, api_key: str) -> str:
+def _call_gemini(user_prompt: str) -> str:
     from google import genai
     from google.genai import types
 
+    # API anahtarını açıkça belirtiyoruz
+    api_key = os.getenv("GEMINI_API_KEY")
     client = genai.Client(api_key=api_key)  
-    model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+    
+    # .env'den okuduğumuz tırnaksız model adını kullanıyoruz
+    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     
     resp = client.models.generate_content(
         model=model,
@@ -136,11 +177,16 @@ def _call_gemini(user_prompt: str, api_key: str) -> str:
     return resp.text or ""
 
 
-def _call_openrouter(user_prompt: str, api_key: str) -> str:
+def _call_openrouter(user_prompt: str) -> str:
     from openai import OpenAI
-    client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
-    model = os.environ.get("OPENROUTER_MODEL", "openai/gpt-4o-mini")
-    
+
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
+    )
+    # Varsayılan olarak kullanıcının belirttiği veya benzer bir ücretsiz / uygun modeli kullanalım
+    model = os.getenv("OPENROUTER_MODEL", "openai/gpt-oss-20b:free")
     resp = client.chat.completions.create(
         model=model,
         max_tokens=800,
@@ -154,6 +200,8 @@ def _call_openrouter(user_prompt: str, api_key: str) -> str:
 
 
 def _parse_three_items(text: str) -> list[dict]:
+    """LLM çıktısından tam 3 {title, body} maddesi çıkar."""
+    # Model bazen ```json ... ``` sarabilir; en dıştaki diziyi yakala.
     start = text.find("[")
     end = text.rfind("]")
     if start == -1 or end == -1:
@@ -161,7 +209,6 @@ def _parse_three_items(text: str) -> list[dict]:
     items = json.loads(text[start : end + 1])
     if not isinstance(items, list) or len(items) < 3:
         raise ValueError("En az 3 madde bekleniyordu")
-    
     cleaned = []
     for it in items[:3]:
         cleaned.append(
@@ -174,10 +221,11 @@ def _parse_three_items(text: str) -> list[dict]:
 
 
 def _stub_report(result: ScoreResult) -> dict:
+    """Anahtar/erişim yokken deterministik 3 maddelik rapor (drivers'tan)."""
     titles = ["Nakit Rotası", "Ekip Sağlığı", "Pazar Yönü"]
     drivers = result.drivers or ["Veriler dengeli, rotan şimdilik açık."]
+
     items: list[dict] = []
-    
     for i in range(3):
         driver = drivers[i] if i < len(drivers) else None
         if driver:
@@ -185,12 +233,12 @@ def _stub_report(result: ScoreResult) -> dict:
         else:
             body = "Rota temiz görünüyor; bir sonraki 5 müşteri görüşmeni planla."
         items.append({"title": titles[i], "body": body})
-        
+
     return {"items": items, "source": "stub"}
 
 
 # ===========================================================================
-# Kapsamlı Yol Haritası Raporu (Adım 5)
+# Kapsamlı Yol Haritası Raporu (Adım 5) — tüm metodoloji verileri birleşik
 # ===========================================================================
 
 COMPREHENSIVE_SYSTEM_PROMPT = (
@@ -216,7 +264,12 @@ def generate_comprehensive_report(
     methodology2_answers: dict,
     score_result: ScoreResult,
 ) -> dict:
-    
+    """Tüm adımların verisini birleştirerek kapsamlı AI yol haritası üretir.
+
+    Returns:
+        {"roadmap": "<markdown metin>", "source": "llm" | "stub"}
+    Bu fonksiyon hiçbir zaman exception fırlatmaz; hata durumunda stub'a düşer.
+    """
     provider, api_key = _resolve_provider()
 
     if not provider or not api_key:
@@ -226,28 +279,34 @@ def generate_comprehensive_report(
         user_prompt = _build_comprehensive_prompt(
             branch, step1_answers, methodology1_answers, methodology2_answers, score_result
         )
-        
         if provider == "openai":
-            text = _call_openai_comprehensive(user_prompt, api_key)
+            text = _call_openai_comprehensive(user_prompt)
         elif provider == "anthropic":
-            text = _call_anthropic_comprehensive(user_prompt, api_key)
+            text = _call_anthropic_comprehensive(user_prompt)
         elif provider == "gemini":
-            text = _call_gemini_comprehensive(user_prompt, api_key)
+            text = _call_gemini_comprehensive(user_prompt)
         elif provider == "openrouter":
-            text = _call_openrouter_comprehensive(user_prompt, api_key)
+            text = _call_openrouter_comprehensive(user_prompt)
         else:
             return _stub_comprehensive_report(score_result)
 
         return {"roadmap": text.strip(), "source": "llm"}
-    except Exception as e:
-        stub = _stub_comprehensive_report(score_result)
-        hata_mesaji = f"\n\n### 🚨 HATA DETAYI (Geliştirici Logu)\n**Hata Türü:** `{type(e).__name__}`\n**Açıklama:** `{str(e)}`"
-        stub["roadmap"] = hata_mesaji + "\n\n" + stub["roadmap"]
-        return stub
+    except Exception as exc:  # noqa: BLE001
+        logger.error("[llm_client] generate_comprehensive_report hatası (provider=%s): %s", provider, traceback.format_exc())
+        return _stub_comprehensive_report(score_result)
 
 
-def _build_comprehensive_prompt(branch: str, step1: dict, metho1: dict, metho2: dict, result: ScoreResult) -> str:
+def _build_comprehensive_prompt(
+    branch: str,
+    step1: dict,
+    metho1: dict,
+    metho2: dict,
+    result: ScoreResult,
+) -> str:
+    """Tüm adımların verilerini tek bir prompt'ta birleştirir."""
+    # Dahili anahtarları filtrele
     public_step1 = {k: v for k, v in step1.items() if not k.startswith("_")}
+
     branch_labels = {
         "fikrim_var": "Fikrim Var (Pre-Seed)",
         "startup_var": "Startup'ım Var (Seed)",
@@ -267,11 +326,10 @@ def _build_comprehensive_prompt(branch: str, step1: dict, metho1: dict, metho2: 
     )
 
 
-def _call_openai_comprehensive(user_prompt: str, api_key: str) -> str:
+def _call_openai_comprehensive(user_prompt: str) -> str:
     from openai import OpenAI
-    client = OpenAI(api_key=api_key)
-    model = os.environ.get("OPENAI_MODEL", "gpt-4o")
-    
+    client = OpenAI()
+    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     resp = client.chat.completions.create(
         model=model,
         max_tokens=1500,
@@ -284,11 +342,10 @@ def _call_openai_comprehensive(user_prompt: str, api_key: str) -> str:
     return resp.choices[0].message.content or ""
 
 
-def _call_anthropic_comprehensive(user_prompt: str, api_key: str) -> str:
+def _call_anthropic_comprehensive(user_prompt: str) -> str:
     import anthropic
-    client = anthropic.Anthropic(api_key=api_key)
-    model = os.environ.get("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
-    
+    client = anthropic.Anthropic()
+    model = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5")
     msg = client.messages.create(
         model=model,
         max_tokens=1500,
@@ -298,12 +355,13 @@ def _call_anthropic_comprehensive(user_prompt: str, api_key: str) -> str:
     return "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")
 
 
-def _call_gemini_comprehensive(user_prompt: str, api_key: str) -> str:
+def _call_gemini_comprehensive(user_prompt: str) -> str:
     from google import genai
     from google.genai import types
 
+    api_key = os.getenv("GEMINI_API_KEY")
     client = genai.Client(api_key=api_key)
-    model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
     resp = client.models.generate_content(
         model=model,
@@ -318,11 +376,11 @@ def _call_gemini_comprehensive(user_prompt: str, api_key: str) -> str:
     return resp.text or ""
 
 
-def _call_openrouter_comprehensive(user_prompt: str, api_key: str) -> str:
+def _call_openrouter_comprehensive(user_prompt: str) -> str:
     from openai import OpenAI
+    api_key = os.getenv("OPENROUTER_API_KEY")
     client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
-    model = os.environ.get("OPENROUTER_MODEL", "openai/gpt-4o-mini")
-    
+    model = os.getenv("OPENROUTER_MODEL", "openai/gpt-oss-20b:free")
     resp = client.chat.completions.create(
         model=model,
         max_tokens=1500,
@@ -336,6 +394,7 @@ def _call_openrouter_comprehensive(user_prompt: str, api_key: str) -> str:
 
 
 def _stub_comprehensive_report(result: ScoreResult) -> dict:
+    """API anahtarı yokken deterministik yol haritası raporu."""
     score = result.maturity_score
     band = result.risk_band
     drivers_text = "\n".join(f"- {d}" for d in result.drivers) if result.drivers else "- Belirgin sinyal yok."

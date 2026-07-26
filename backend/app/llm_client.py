@@ -32,16 +32,35 @@ def _resolve_provider() -> tuple[str, str | None]:
     Öncelik sırası: OpenAI -> Anthropic -> Gemini -> OpenRouter
     Returns: (provider_name, api_key)
     """
-    if os.environ.get("OPENAI_API_KEY"):
-        return "openai", os.environ.get("OPENAI_API_KEY")
-    if os.environ.get("ANTHROPIC_API_KEY"):
-        return "anthropic", os.environ.get("ANTHROPIC_API_KEY")
-    if os.environ.get("GEMINI_API_KEY"):
-        return "gemini", os.environ.get("GEMINI_API_KEY")
-    if os.environ.get("OPENROUTER_API_KEY"):
-        return "openrouter", os.environ.get("OPENROUTER_API_KEY")
-    
+    import sys
+
+    candidates = [
+        ("openai", "OPENAI_API_KEY"),
+        ("anthropic", "ANTHROPIC_API_KEY"),
+        ("gemini", "GEMINI_API_KEY"),
+        ("openrouter", "OPENROUTER_API_KEY"),
+    ]
+
+    for provider_name, env_var in candidates:
+        raw = os.environ.get(env_var)
+        if raw is not None:
+            key = raw.strip()
+            if key:
+                print(
+                    f"[llm_client] Provider resolved: {provider_name} "
+                    f"(key len={len(key)}, var={env_var})",
+                    file=sys.stderr,
+                )
+                return provider_name, key
+            else:
+                print(
+                    f"[llm_client] {env_var} set but EMPTY after strip",
+                    file=sys.stderr,
+                )
+
+    print("[llm_client] No API key found in env — falling back to stub", file=sys.stderr)
     return "", None
+
 
 
 def generate_report(branch: str, features: dict, result: ScoreResult) -> dict:

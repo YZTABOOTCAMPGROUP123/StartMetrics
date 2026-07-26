@@ -4,7 +4,3 @@ python-dotenv>=1.0
 fpdf2>=2.7
 openai>=1.30
 joblib>=1.3.2
-httpx>=0.27 # yeni eklenen
-numpy>=2.0 # yeni eklenen
-scikit-learn>=1.4 # yeni eklenen
-pillow>=10.0 # yeni eklenen

@@ -19,7 +19,3 @@
       "destination": "/index.html"
     }
   ],
-  "env": {
-    "LLM_PROVIDER": "openai"
-  }
-}

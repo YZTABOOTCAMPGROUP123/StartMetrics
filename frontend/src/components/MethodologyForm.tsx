@@ -36,7 +36,7 @@ const JAVELIN_BOARD_FIELDS: MethodologyField[] = [
   { key: "varsayimlar", label: "🧠 Beyin Fırtınası — Varsayımlar Listesi", placeholder: "Doğrulanmamış en riskli varsayımlarınızı listeleyin.", kind: "textarea" },
   { key: "yardim_surecleri", label: "💬 Yardıma mı ihtiyacınız var? — Süreçler & İhtiyaçlar", placeholder: "Deneyinizi ilerletmek için hangi kaynak, kişi veya süreçlere ihtiyacınız var?", kind: "textarea" },
   { key: "nasil_test", label: "🧪 Deney #1 — Nasıl Test Edeceksiniz?", placeholder: "En riskli varsayımı test etmek için ne yapacaksınız?", kind: "textarea" },
-  { key: "basari_kriteri", label: "🧪 Deney #1 — Başarı Kriterin Ne?", placeholder: "Testin başarılı sayılması için minimum hangi sonucu elde etmeniz gerekiyor?", kind: "textarea" },
+  { key: "basari_kriteri", label: "🧪 Deney #2 — Başarı Kriterin Ne?", placeholder: "Testin başarılı sayılması için minimum hangi sonucu elde etmeniz gerekiyor?", kind: "textarea" },
 ];
 
 // ===== STARTUP'IM VAR =====

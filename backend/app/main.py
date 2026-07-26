@@ -13,9 +13,16 @@ modüllerinde; bu dosya sadece istekleri onlara yönlendirir.
 
 from __future__ import annotations
 
+import pathlib
+
 from dotenv import load_dotenv
 
-load_dotenv()  # .env -> ortam değişkenleri (OPENAI_API_KEY vb.)
+# .env dosyasını yalnızca gerçekten varsa yükle.
+# Vercel'de .env dosyası YOKTUR; ortam değişkenleri Vercel Dashboard'dan
+# inject edilir. load_dotenv() dosyayı bulamazsa sessizce geçer ama
+# açıkça kontrol etmek güvenilirliği artırır.
+_env_path = pathlib.Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=_env_path if _env_path.exists() else None)
 
 from fastapi import APIRouter, FastAPI, HTTPException  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
@@ -53,6 +60,39 @@ api = APIRouter(prefix="/api")
 @api.get("/health")
 def health():
     return {"ok": True}
+
+@api.get("/debug-env")
+def debug_env():
+    """Vercel ortam değişkenlerini teşhis etmek için geçici endpoint."""
+    import os
+    from . import llm_client
+
+    provider, api_key = llm_client._resolve_provider()
+
+    env_keys = [
+        "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
+        "GEMINI_API_KEY", "OPENROUTER_API_KEY",
+        "LLM_PROVIDER", "OPENAI_MODEL",
+    ]
+    env_status = {}
+    for k in env_keys:
+        val = os.environ.get(k)
+        if val is None:
+            env_status[k] = "NOT SET"
+        elif val == "":
+            env_status[k] = "EMPTY STRING"
+        else:
+            env_status[k] = f"SET (len={len(val)}, starts='{val[:4]}...')"
+
+    return {
+        "resolved_provider": provider or "NONE",
+        "api_key_found": bool(api_key),
+        "api_key_length": len(api_key) if api_key else 0,
+        "env_status": env_status,
+        "cwd": os.getcwd(),
+        "dotenv_file_exists": os.path.exists(".env"),
+        "backend_dotenv_exists": os.path.exists("backend/.env"),
+    }
 
 
 @api.get("/config")

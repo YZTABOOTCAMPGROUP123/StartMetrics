@@ -2,7 +2,7 @@
 llm_client.py — AI Yön Raporu üretici (Vercel Optimize Edilmiş)
 
 Sorumluluk: Skorlayıcının çıktısını ve alanları Türkçe mentor prompt'una
-gömüp LLM'den navigasyon raporu almak. Sadece Vercel Environment Variables
+gömüp OpenAI'dan navigasyon raporu almak. Sadece Vercel Environment Variables
 (Ortam Değişkenleri) üzerinden çalışır.
 """
 
@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 
 from .scorer import ScoreResult
 
@@ -26,64 +27,42 @@ SYSTEM_PROMPT = (
     'döndür: [{"title": "...", "body": "..."}, ...] — tam 3 eleman, başka metin yok.'
 )
 
-def _resolve_provider() -> tuple[str, str | None]:
+
+def _get_openai_key() -> str | None:
     """
-    Sadece Vercel Environment Variables'a bakarak API anahtarını bulur.
-    Öncelik sırası: OpenAI -> Anthropic -> Gemini -> OpenRouter
-    Returns: (provider_name, api_key)
+    OPENAI_API_KEY ortam değişkenini okur.
+    Vercel Dashboard'dan veya lokal .env'den gelir.
     """
-    import sys
+    raw = os.environ.get("OPENAI_API_KEY")
+    if raw is not None:
+        key = raw.strip()
+        if key:
+            print(
+                f"[llm_client] OpenAI key found (len={len(key)})",
+                file=sys.stderr,
+            )
+            return key
+        else:
+            print("[llm_client] OPENAI_API_KEY set but EMPTY after strip", file=sys.stderr)
 
-    candidates = [
-        ("openai", "OPENAI_API_KEY"),
-        ("anthropic", "ANTHROPIC_API_KEY"),
-        ("gemini", "GEMINI_API_KEY"),
-        ("openrouter", "OPENROUTER_API_KEY"),
-    ]
-
-    for provider_name, env_var in candidates:
-        raw = os.environ.get(env_var)
-        if raw is not None:
-            key = raw.strip()
-            if key:
-                print(
-                    f"[llm_client] Provider resolved: {provider_name} "
-                    f"(key len={len(key)}, var={env_var})",
-                    file=sys.stderr,
-                )
-                return provider_name, key
-            else:
-                print(
-                    f"[llm_client] {env_var} set but EMPTY after strip",
-                    file=sys.stderr,
-                )
-
-    print("[llm_client] No API key found in env — falling back to stub", file=sys.stderr)
-    return "", None
+    print("[llm_client] OPENAI_API_KEY not found — falling back to stub", file=sys.stderr)
+    return None
 
 
+# ---------------------------------------------------------------------------
+# Navigasyon Raporu (3 madde)
+# ---------------------------------------------------------------------------
 
 def generate_report(branch: str, features: dict, result: ScoreResult) -> dict:
     """3 maddelik navigasyon raporu üretir."""
-    provider, api_key = _resolve_provider()
+    api_key = _get_openai_key()
 
-    if not provider or not api_key:
+    if not api_key:
         return _stub_report(result)
 
     try:
         user_prompt = _build_user_prompt(branch, features, result)
-        
-        if provider == "openai":
-            text = _call_openai(user_prompt, api_key)
-        elif provider == "anthropic":
-            text = _call_anthropic(user_prompt, api_key)
-        elif provider == "gemini":
-            text = _call_gemini(user_prompt, api_key)
-        elif provider == "openrouter":
-            text = _call_openrouter(user_prompt, api_key)
-        else:
-            return _stub_report(result)
-
+        text = _call_openai(user_prompt, api_key)
         items = _parse_three_items(text)
         return {"items": items, "source": "llm"}
     except Exception as e:
@@ -91,6 +70,7 @@ def generate_report(branch: str, features: dict, result: ScoreResult) -> dict:
         stub["items"][0]["title"] = "SİSTEM HATASI"
         stub["items"][0]["body"] = f"Hata Detayı: {type(e).__name__} - {str(e)}"
         return stub
+
 
 def _build_user_prompt(branch: str, features: dict, result: ScoreResult) -> str:
     public = {k: v for k, v in features.items() if not k.startswith("_")}
@@ -112,57 +92,6 @@ def _call_openai(user_prompt: str, api_key: str) -> str:
     resp = client.chat.completions.create(
         model=model,
         max_tokens=400,
-        temperature=0.5,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_prompt},
-        ],
-    )
-    return resp.choices[0].message.content or ""
-
-
-def _call_anthropic(user_prompt: str, api_key: str) -> str:
-    import anthropic
-    client = anthropic.Anthropic(api_key=api_key)
-    model = os.environ.get("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
-    
-    msg = client.messages.create(
-        model=model,
-        max_tokens=400,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_prompt}],
-    )
-    return "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")
-
-
-def _call_gemini(user_prompt: str, api_key: str) -> str:
-    from google import genai
-    from google.genai import types
-
-    client = genai.Client(api_key=api_key)  
-    model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-    
-    resp = client.models.generate_content(
-        model=model,
-        contents=user_prompt,
-        config=types.GenerateContentConfig(
-            temperature=0.5,
-            max_output_tokens=800,
-            system_instruction=SYSTEM_PROMPT,
-            thinking_config=types.ThinkingConfig(thinking_budget=0),
-        ),
-    )
-    return resp.text or ""
-
-
-def _call_openrouter(user_prompt: str, api_key: str) -> str:
-    from openai import OpenAI
-    client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
-    model = os.environ.get("OPENROUTER_MODEL", "openai/gpt-4o-mini")
-    
-    resp = client.chat.completions.create(
-        model=model,
-        max_tokens=800,
         temperature=0.5,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -236,27 +165,16 @@ def generate_comprehensive_report(
     score_result: ScoreResult,
 ) -> dict:
     
-    provider, api_key = _resolve_provider()
+    api_key = _get_openai_key()
 
-    if not provider or not api_key:
+    if not api_key:
         return _stub_comprehensive_report(score_result)
 
     try:
         user_prompt = _build_comprehensive_prompt(
             branch, step1_answers, methodology1_answers, methodology2_answers, score_result
         )
-        
-        if provider == "openai":
-            text = _call_openai_comprehensive(user_prompt, api_key)
-        elif provider == "anthropic":
-            text = _call_anthropic_comprehensive(user_prompt, api_key)
-        elif provider == "gemini":
-            text = _call_gemini_comprehensive(user_prompt, api_key)
-        elif provider == "openrouter":
-            text = _call_openrouter_comprehensive(user_prompt, api_key)
-        else:
-            return _stub_comprehensive_report(score_result)
-
+        text = _call_openai_comprehensive(user_prompt, api_key)
         return {"roadmap": text.strip(), "source": "llm"}
     except Exception as e:
         stub = _stub_comprehensive_report(score_result)
@@ -290,57 +208,6 @@ def _call_openai_comprehensive(user_prompt: str, api_key: str) -> str:
     from openai import OpenAI
     client = OpenAI(api_key=api_key)
     model = os.environ.get("OPENAI_MODEL", "gpt-4o")
-    
-    resp = client.chat.completions.create(
-        model=model,
-        max_tokens=1500,
-        temperature=0.6,
-        messages=[
-            {"role": "system", "content": COMPREHENSIVE_SYSTEM_PROMPT},
-            {"role": "user", "content": user_prompt},
-        ],
-    )
-    return resp.choices[0].message.content or ""
-
-
-def _call_anthropic_comprehensive(user_prompt: str, api_key: str) -> str:
-    import anthropic
-    client = anthropic.Anthropic(api_key=api_key)
-    model = os.environ.get("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
-    
-    msg = client.messages.create(
-        model=model,
-        max_tokens=1500,
-        system=COMPREHENSIVE_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_prompt}],
-    )
-    return "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")
-
-
-def _call_gemini_comprehensive(user_prompt: str, api_key: str) -> str:
-    from google import genai
-    from google.genai import types
-
-    client = genai.Client(api_key=api_key)
-    model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-
-    resp = client.models.generate_content(
-        model=model,
-        contents=user_prompt,
-        config=types.GenerateContentConfig(
-            temperature=0.6,
-            max_output_tokens=2000,
-            system_instruction=COMPREHENSIVE_SYSTEM_PROMPT,
-            thinking_config=types.ThinkingConfig(thinking_budget=0),
-        ),
-    )
-    return resp.text or ""
-
-
-def _call_openrouter_comprehensive(user_prompt: str, api_key: str) -> str:
-    from openai import OpenAI
-    client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
-    model = os.environ.get("OPENROUTER_MODEL", "openai/gpt-4o-mini")
     
     resp = client.chat.completions.create(
         model=model,

@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import traceback
 
 from .scorer import ScoreResult
 
@@ -32,18 +33,36 @@ def _get_openai_key() -> str | None:
     """
     OPENAI_API_KEY ortam değişkenini okur.
     Vercel Dashboard'dan veya lokal .env'den gelir.
+
+    Güvenlik: Vercel'de yanlış yapıştırma sonucu anahtar birden fazla kez
+    tekrarlanabilir (newline ile ayrılmış). Bu durumda sadece ilk kopyayı alır
+    ve tüm boşluk/newline karakterlerini temizler.
     """
     raw = os.environ.get("OPENAI_API_KEY")
     if raw is not None:
+        # Newline, carriage-return ve boşlukları temizle
         key = raw.strip()
         if key:
-            print(
-                f"[llm_client] OpenAI key found (len={len(key)})",
-                file=sys.stderr,
-            )
-            return key
-        else:
-            print("[llm_client] OPENAI_API_KEY set but EMPTY after strip", file=sys.stderr)
+            # Eğer anahtar newline ile tekrarlanmışsa sadece ilk kopyayı al
+            if "\n" in key:
+                print(
+                    f"[llm_client] UYARI: OPENAI_API_KEY içinde newline bulundu, "
+                    f"sadece ilk satır kullanılacak (toplam {len(key)} karakter)",
+                    file=sys.stderr,
+                )
+                key = key.split("\n")[0].strip()
+            if "\r" in key:
+                key = key.split("\r")[0].strip()
+
+            if key:
+                print(
+                    f"[llm_client] OpenAI key found (len={len(key)}, "
+                    f"starts='{key[:8]}...')",
+                    file=sys.stderr,
+                )
+                return key
+
+        print("[llm_client] OPENAI_API_KEY set but EMPTY after sanitization", file=sys.stderr)
 
     print("[llm_client] OPENAI_API_KEY not found — falling back to stub", file=sys.stderr)
     return None
@@ -67,6 +86,18 @@ def generate_report(branch: str, features: dict, result: ScoreResult) -> dict:
         return {"items": items, "source": "llm"}
     
     except Exception as e:
+        print(
+            f"[llm_client] HATA: {type(e).__name__}: {e}",
+            file=sys.stderr,
+        )
+        traceback.print_exc(file=sys.stderr)
+        # Kök nedeni de logla (örn. LocalProtocolError)
+        cause = e.__cause__ or e.__context__
+        if cause:
+            print(
+                f"[llm_client] KÖK NEDEN: {type(cause).__name__}: {cause}",
+                file=sys.stderr,
+            )
         stub = _stub_report(result)
         stub["items"][0]["title"] = "SİSTEM HATASI"
         stub["items"][0]["body"] = f"Hata Detayı: {type(e).__name__} - {str(e)}"
@@ -87,12 +118,27 @@ def _build_user_prompt(branch: str, features: dict, result: ScoreResult) -> str:
 
 def _call_openai(user_prompt: str, api_key: str) -> str:
     from openai import OpenAI
-    client = OpenAI(api_key=api_key,
-                    timeout=25.0,        # maxDuration=30 ile uyumlu
-                    max_retries=2,
-                   )
+
+    # Son savunma hattı: key içinde whitespace/newline kalmamalı
+    clean_key = api_key.strip().replace("\n", "").replace("\r", "")
+    if clean_key != api_key:
+        print(
+            "[llm_client] UYARI: _call_openai'da key'de fazladan boşluk/newline temizlendi",
+            file=sys.stderr,
+        )
+
+    client = OpenAI(
+        api_key=clean_key,
+        timeout=25.0,        # maxDuration=30 ile uyumlu
+        max_retries=2,
+    )
     model = os.environ.get("OPENAI_MODEL", "gpt-4o")
-    
+
+    print(
+        f"[llm_client] OpenAI çağrısı: model={model}, key_len={len(clean_key)}",
+        file=sys.stderr,
+    )
+
     resp = client.chat.completions.create(
         model=model,
         max_tokens=400,
@@ -182,6 +228,17 @@ def generate_comprehensive_report(
         return {"roadmap": text.strip(), "source": "llm"}
     
     except Exception as e:
+        print(
+            f"[llm_client] KAPSAMLI RAPOR HATASI: {type(e).__name__}: {e}",
+            file=sys.stderr,
+        )
+        traceback.print_exc(file=sys.stderr)
+        cause = e.__cause__ or e.__context__
+        if cause:
+            print(
+                f"[llm_client] KÖK NEDEN: {type(cause).__name__}: {cause}",
+                file=sys.stderr,
+            )
         stub = _stub_comprehensive_report(score_result)
         hata_mesaji = f"\n\n### 🚨 HATA DETAYI (Geliştirici Logu)\n**Hata Türü:** `{type(e).__name__}`\n**Açıklama:** `{str(e)}`"
         stub["roadmap"] = hata_mesaji + "\n\n" + stub["roadmap"]
@@ -211,12 +268,27 @@ def _build_comprehensive_prompt(branch: str, step1: dict, metho1: dict, metho2: 
 
 def _call_openai_comprehensive(user_prompt: str, api_key: str) -> str:
     from openai import OpenAI
-    client = OpenAI(api_key=api_key,
-                    timeout=25.0,        # maxDuration=30 ile uyumlu
-                    max_retries=2,
-                   )
+
+    # Son savunma hattı: key içinde whitespace/newline kalmamalı
+    clean_key = api_key.strip().replace("\n", "").replace("\r", "")
+    if clean_key != api_key:
+        print(
+            "[llm_client] UYARI: _call_openai_comprehensive'da key temizlendi",
+            file=sys.stderr,
+        )
+
+    client = OpenAI(
+        api_key=clean_key,
+        timeout=25.0,        # maxDuration=30 ile uyumlu
+        max_retries=2,
+    )
     model = os.environ.get("OPENAI_MODEL", "gpt-4o")
-    
+
+    print(
+        f"[llm_client] Kapsamlı rapor çağrısı: model={model}, key_len={len(clean_key)}",
+        file=sys.stderr,
+    )
+
     resp = client.chat.completions.create(
         model=model,
         max_tokens=1500,

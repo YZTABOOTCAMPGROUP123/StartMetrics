@@ -66,11 +66,10 @@ def generate_report(branch: str, features: dict, result: ScoreResult) -> dict:
         items = _parse_three_items(text)
         return {"items": items, "source": "llm"}
     except Exception as e:
-    import traceback
-    print(f"[llm_client] HATA: {type(e).__name__}: {e}", file=sys.stderr)
-    if e.__cause__:
-        print(f"[llm_client] KÖK NEDEN: {type(e.__cause__).__name__}: {e.__cause__}", file=sys.stderr)
-    traceback.print_exc(file=sys.stderr)
+        stub = _stub_report(result)
+        stub["items"][0]["title"] = "SİSTEM HATASI"
+        stub["items"][0]["body"] = f"Hata Detayı: {type(e).__name__} - {str(e)}"
+        return stub
 
 
 def _build_user_prompt(branch: str, features: dict, result: ScoreResult) -> str:

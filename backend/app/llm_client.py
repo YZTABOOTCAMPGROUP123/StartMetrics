@@ -86,7 +86,10 @@ def _build_user_prompt(branch: str, features: dict, result: ScoreResult) -> str:
 
 def _call_openai(user_prompt: str, api_key: str) -> str:
     from openai import OpenAI
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(api_key=api_key,
+                    timeout=25.0,        # maxDuration=30 ile uyumlu
+                    max_retries=2,
+                   )
     model = os.environ.get("OPENAI_MODEL", "gpt-4o")
     
     resp = client.chat.completions.create(
@@ -206,7 +209,10 @@ def _build_comprehensive_prompt(branch: str, step1: dict, metho1: dict, metho2: 
 
 def _call_openai_comprehensive(user_prompt: str, api_key: str) -> str:
     from openai import OpenAI
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(api_key=api_key,
+                    timeout=25.0,        # maxDuration=30 ile uyumlu
+                    max_retries=2,
+                   )
     model = os.environ.get("OPENAI_MODEL", "gpt-4o")
     
     resp = client.chat.completions.create(

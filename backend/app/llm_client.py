@@ -67,13 +67,9 @@ def generate_report(branch: str, features: dict, result: ScoreResult) -> dict:
         return {"items": items, "source": "llm"}
     
     except Exception as e:
-        root = e.__cause__ or e.__context__
-        root_info = f"{type(root).__name__}: {root}" if root else "yok"
-        print(f"[llm_client] HATA: {type(e).__name__}: {e} | KÖK NEDEN: {root_info}", file=sys.stderr)
-    
         stub = _stub_report(result)
         stub["items"][0]["title"] = "SİSTEM HATASI"
-        stub["items"][0]["body"] = f"Hata: {type(e).__name__} - {str(e)} | Kök: {root_info}"
+        stub["items"][0]["body"] = f"Hata Detayı: {type(e).__name__} - {str(e)}"
         return stub
 
 
@@ -186,13 +182,9 @@ def generate_comprehensive_report(
         return {"roadmap": text.strip(), "source": "llm"}
     
     except Exception as e:
-        root = e.__cause__ or e.__context__
-        root_info = f"{type(root).__name__}: {root}" if root else "yok"
-        print(f"[llm_client] HATA: {type(e).__name__}: {e} | KÖK NEDEN: {root_info}", file=sys.stderr)
-        
-        stub = _stub_report(result)
-        stub["items"][0]["title"] = "SİSTEM HATASI"
-        stub["items"][0]["body"] = f"Hata: {type(e).__name__} - {str(e)} | Kök: {root_info}"
+        stub = _stub_comprehensive_report(score_result)
+        hata_mesaji = f"\n\n### 🚨 HATA DETAYI (Geliştirici Logu)\n**Hata Türü:** `{type(e).__name__}`\n**Açıklama:** `{str(e)}`"
+        stub["roadmap"] = hata_mesaji + "\n\n" + stub["roadmap"]
         return stub
 
 

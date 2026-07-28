@@ -61,6 +61,30 @@ api = APIRouter(prefix="/api")
 def health():
     return {"ok": True}
 
+# main.py içine geçici teşhis endpoint'i eklendi.
+@api.get("/debug-network")
+def debug_network():
+    """OpenAI'a bağımsız, ham bir HTTPS bağlantı testi."""
+    import httpx
+    results = {}
+
+    # Test 1: Genel internet erişimi (OpenAI dışı bir host)
+    try:
+        r = httpx.get("https://api.github.com", timeout=10.0)
+        results["github_reachable"] = f"OK ({r.status_code})"
+    except Exception as e:
+        results["github_reachable"] = f"FAIL: {type(e).__name__} - {str(e)}"
+
+    # Test 2: OpenAI'a doğrudan (SDK'sız) bağlantı
+    try:
+        r = httpx.get("https://api.openai.com/v1/models",
+                       headers={"Authorization": f"Bearer test"},
+                       timeout=10.0)
+        results["openai_reachable"] = f"OK ({r.status_code})"  # 401 bile OK, bağlantı kurulmuş demek
+    except Exception as e:
+        results["openai_reachable"] = f"FAIL: {type(e).__name__} - {str(e)}"
+
+    return results
 
 @api.get("/debug-env")
 def debug_env():

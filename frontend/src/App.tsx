@@ -41,7 +41,7 @@ const STEP_LABELS = [
 function BrandMark() {
   return (
     <div className="brand-mark">
-      <span className="brand-logo">◈</span>
+      <span className="brand-logo-text">SM</span>
       StartMetrics
     </div>
   );
@@ -58,7 +58,13 @@ function StepIndicator({ step }: { step: number }) {
         return (
           <div key={i} className={`step-item ${isActive ? "active" : ""} ${isDone ? "done" : ""}`}>
             <div className="step-circle">
-              {isDone ? "✓" : stepNum}
+              {isDone ? (
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : (
+                stepNum
+              )}
             </div>
             <span className="step-label">{label}</span>
             {i < STEP_LABELS.length - 1 && <div className="step-line" />}
@@ -108,17 +114,14 @@ export default function App() {
     setError(null);
   }
 
-// Adım 1 → 2: /api/analyze çağrısı (mevcut, dokunulmadı)
+  // Adım 1 → 2: /api/analyze çağrısı
   async function handleAnalyze() {
     if (!branch) return;
     setLoading(true);
     setError(null);
     try {
       const result = await analyze(branch, answers);
-      
-      // Orijinal backend verisini doğrudan sisteme veriyoruz
       setAnalysisResult(result);
-      
       setStep(2);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Bir hata oluştu");
@@ -157,7 +160,7 @@ export default function App() {
         <nav className="hero-nav">
           <BrandMark />
           <button className="theme-toggle" onClick={toggle} title="Tema değiştir">
-            {theme === "dark" ? "☀️" : "🌙"}
+            {theme === "dark" ? "Aydınlık Mod" : "Karanlık Mod"}
           </button>
         </nav>
 
@@ -181,7 +184,6 @@ export default function App() {
 
           <motion.p
             className="hero-lead"
-            style={{ maxWidth: "700px" }}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.12 }}
@@ -210,7 +212,7 @@ export default function App() {
                   <span className="branch-index">{i + 1}</span>
                   <h3>{config[key].title}</h3>
                   <p>{BRANCH_TONE[key]}</p>
-                  <span className="cta">Başla →</span>
+                  <span className="cta">Başla</span>
                 </motion.button>
               ))}
           </div>
@@ -230,10 +232,10 @@ export default function App() {
           <BrandMark />
           <div className="header-actions">
             <button className="theme-toggle light" onClick={toggle}>
-              {theme === "dark" ? "☀️" : "🌙"}
+              {theme === "dark" ? "Aydınlık Mod" : "Karanlık Mod"}
             </button>
             <button className="back-btn" onClick={reset}>
-              ← Baştan başla
+              Baştan başla
             </button>
           </div>
         </header>
@@ -259,10 +261,10 @@ export default function App() {
         <BrandMark />
         <div className="header-actions">
           <button className="theme-toggle light" onClick={toggle}>
-            {theme === "dark" ? "☀️" : "🌙"}
+            {theme === "dark" ? "Aydınlık Mod" : "Karanlık Mod"}
           </button>
           <button className="back-btn" onClick={reset}>
-            ← Baştan başla
+            Baştan başla
           </button>
         </div>
       </header>
@@ -297,7 +299,7 @@ export default function App() {
           {step === 2 && analysisResult && (
             <motion.div
               key="step2-result"
-              style={{ display: "flex", justifyContent: "center", width: "100%", maxWidth: "800px", margin: "0 auto" }}
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", margin: "0 auto" }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -312,7 +314,7 @@ export default function App() {
                   transition={{ delay: 0.6 }}
                   whileHover={{ scale: 1.02 }}
                 >
-                  Metodoloji Analizine Devam Et →
+                  Metodoloji Analizine Devam Et
                 </motion.button>
               </div>
             </motion.div>
@@ -327,7 +329,7 @@ export default function App() {
               onChange={(k, v) => setMethodology1((p) => ({ ...p, [k]: v }))}
               onSubmit={() => setStep(4)}
               onBack={() => setStep(2)}
-              submitLabel="Devam Et →"
+              submitLabel="Devam Et"
             />
           )}
 
@@ -340,7 +342,7 @@ export default function App() {
               onChange={(k, v) => setMethodology2((p) => ({ ...p, [k]: v }))}
               onSubmit={handleComprehensiveReport}
               onBack={() => setStep(3)}
-              submitLabel={loading ? "Rapor Oluşturuluyor…" : "⚡ Kapsamlı Rapor Oluştur"}
+              submitLabel={loading ? "Rapor Oluşturuluyor…" : "Kapsamlı Rapor Oluştur"}
               loading={loading}
             />
           )}

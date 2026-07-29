@@ -44,10 +44,13 @@ export interface AnalysisResponse {
 
 export interface ComprehensiveReportResponse {
   maturity_score: number;
+  base_maturity_score: number;
+  score_delta: number;
   risk_probability: number;
   risk_percent: number;
   risk_band: string;
   drivers: string[];
+  adjustment_reasons: string[];
   certificate_available: boolean;
   roadmap_report: string;
   report_source: string;

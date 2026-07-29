@@ -33,10 +33,10 @@ const LEAN_CANVAS_FIELDS: MethodologyField[] = [
 ];
 
 const JAVELIN_BOARD_FIELDS: MethodologyField[] = [
-  { key: "varsayimlar", label: "🧠 Beyin Fırtınası — Varsayımlar Listesi", placeholder: "Doğrulanmamış en riskli varsayımlarınızı listeleyin.", kind: "textarea" },
-  { key: "yardim_surecleri", label: "💬 Yardıma mı ihtiyacınız var? — Süreçler & İhtiyaçlar", placeholder: "Deneyinizi ilerletmek için hangi kaynak, kişi veya süreçlere ihtiyacınız var?", kind: "textarea" },
-  { key: "nasil_test", label: "🧪 Deney #1 — Nasıl Test Edeceksiniz?", placeholder: "En riskli varsayımı test etmek için ne yapacaksınız?", kind: "textarea" },
-  { key: "basari_kriteri", label: "🧪 Deney #2 — Başarı Kriterin Ne?", placeholder: "Testin başarılı sayılması için minimum hangi sonucu elde etmeniz gerekiyor?", kind: "textarea" },
+  { key: "varsayimlar", label: "Beyin Fırtınası — Varsayımlar Listesi", placeholder: "Doğrulanmamış en riskli varsayımlarınızı listeleyin.", kind: "textarea" },
+  { key: "yardim_surecleri", label: "Yardıma mı ihtiyacınız var? — Süreçler & İhtiyaçlar", placeholder: "Deneyinizi ilerletmek için hangi kaynak, kişi veya süreçlere ihtiyacınız var?", kind: "textarea" },
+  { key: "nasil_test", label: "Deney #1 — Nasıl Test Edeceksiniz?", placeholder: "En riskli varsayımı test etmek için ne yapacaksınız?", kind: "textarea" },
+  { key: "basari_kriteri", label: "Deney #2 — Başarı Kriterin Ne?", placeholder: "Testin başarılı sayılması için minimum hangi sonucu elde etmeniz gerekiyor?", kind: "textarea" },
 ];
 
 // ===== STARTUP'IM VAR =====
@@ -111,12 +111,12 @@ const FOUNDER_READINESS_FIELDS: MethodologyField[] = [
 ];
 
 const LEAN_DISCIPLINE_FIELDS: MethodologyField[] = [
-  { key: "problem_dogrulama", label: "✅ Problem Doğrulama — 15 birebir mülakat gerçekleştirdiniz mi?", kind: "select", options: ["Evet, 15+ mülakat yaptım", "Kısmen, 5-14 mülakat", "Hayır, henüz başlamadım", "Online anket yaptım, yüz yüze değil"] },
-  { key: "cozum_dogrulama", label: "✅ Çözüm Doğrulama — Görsel/Figma prototype müşteriye gösterildi mi?", kind: "select", options: ["Evet, en az 5 kişiye gösterdim", "Sadece ekip içi test yaptım", "Hayır, henüz tasarım yok", "Sadece sözel olarak anlattım"] },
-  { key: "musteri_edinme", label: "✅ Müşteri Edinme — İlk 100 kullanıcı planınız var mı?", kind: "select", options: ["Evet, yazılı bir kanallar planı var", "Genel fikrim var ama detaylandırmadım", "Hayır, organik bekliyorum", "Yatırımcı kanallarını kullanacağım"] },
-  { key: "mvp_sadeligi", label: "✅ En Basit Ürün (MVP) — MVP'niz tek bir sorunu mu çözüyor?", kind: "select", options: ["Evet, net bir değer önerisi var", "2-3 sorun var ama hepsi birbiriyle bağlı", "Hayır, kapsamlı bir platform", "Henüz MVP tanımlı değil"] },
-  { key: "rakip_analizi", label: "✅ Rakipleri Tanıma — En büyük 3 rakibinizin zayıf yönlerini biliyor musunuz?", kind: "select", options: ["Evet, hepsini detaylı analiz ettim", "1-2 rakibi inceledim", "Genel bir fikrim var ama derinlemedim", "Rakibimiz yok diye düşünüyorum"] },
-  { key: "basari_metrik", label: "✅ Başarı Kriteri — 30 günlük odak metriğiniz nedir?", kind: "textarea", placeholder: "Örn: 50 kayıtlı kullanıcı, 10 ödeme yapan müşteri, %5 haftalık büyüme…" },
+  { key: "problem_dogrulama", label: "Problem Doğrulama — 15 birebir mülakat gerçekleştirdiniz mi?", kind: "select", options: ["Evet, 15+ mülakat yaptım", "Kısmen, 5-14 mülakat", "Hayır, henüz başlamadım", "Online anket yaptım, yüz yüze değil"] },
+  { key: "cozum_dogrulama", label: "Çözüm Doğrulama — Görsel/Figma prototype müşteriye gösterildi mi?", kind: "select", options: ["Evet, en az 5 kişiye gösterdim", "Sadece ekip içi test yaptım", "Hayır, henüz tasarım yok", "Sadece sözel olarak anlattım"] },
+  { key: "musteri_edinme", label: "Müşteri Edinme — İlk 100 kullanıcı planınız var mı?", kind: "select", options: ["Evet, yazılı bir kanallar planı var", "Genel fikrim var ama detaylandırmadım", "Hayır, organik bekliyorum", "Yatırımcı kanallarını kullanacağım"] },
+  { key: "mvp_sadeligi", label: "En Basit Ürün (MVP) — MVP'niz tek bir sorunu mu çözüyor?", kind: "select", options: ["Evet, net bir değer önerisi var", "2-3 sorun var ama hepsi birbiriyle bağlı", "Hayır, kapsamlı bir platform", "Henüz MVP tanımlı değil"] },
+  { key: "rakip_analizi", label: "Rakipleri Tanıma — En büyük 3 rakibinizin zayıf yönlerini biliyor musunuz?", kind: "select", options: ["Evet, hepsini detaylı analiz ettim", "1-2 rakibi inceledim", "Genel bir fikrim var ama derinlemedim", "Rakibimiz yok diye düşünüyorum"] },
+  { key: "basari_metrik", label: "Başarı Kriteri — 30 günlük odak metriğiniz nedir?", kind: "textarea", placeholder: "Örn: 50 kayıtlı kullanıcı, 10 ödeme yapan müşteri, %5 haftalık büyüme…" },
 ];
 
 // ===== SIRKETIM VAR =====
@@ -159,10 +159,10 @@ const SUREC_KOR_NOKTA_FIELDS: MethodologyField[] = [
 ];
 
 const BCG_MATRIX_FIELDS: MethodologyField[] = [
-  { key: "ozellik_veya_urun_adi", label: "📦 Analiz Edilen Özellik / Ürün", placeholder: "Ürüne eklenen yeni özelliğin veya yeni yatırım yapılan ürünün adı nedir?", kind: "textarea" },
+  { key: "ozellik_veya_urun_adi", label: "Analiz Edilen Özellik / Ürün", placeholder: "Ürüne eklenen yeni özelliğin veya yeni yatırım yapılan ürünün adı nedir?", kind: "textarea" },
   {
     key: "kullanim_sikligi",
-    label: "📊 X Ekseni — Ürün Kullanım Sıklığı",
+    label: "X Ekseni — Ürün Kullanım Sıklığı",
     kind: "select",
     options: [
       "Çok Düşük — Kullanıcılar bu özelliği nadiren kullanıyor",
@@ -174,7 +174,7 @@ const BCG_MATRIX_FIELDS: MethodologyField[] = [
   },
   {
     key: "musteri_memnuniyeti",
-    label: "📊 Y Ekseni — Müşteri Memnuniyeti",
+    label: "Y Ekseni — Müşteri Memnuniyeti",
     kind: "select",
     options: [
       "Çok Düşük — Müşteriler bu konuda aktif şikâyet ediyor",

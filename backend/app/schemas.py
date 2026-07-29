@@ -56,10 +56,13 @@ class ComprehensiveReportResponse(BaseModel):
     """Kapsamlı sonuç ekranı verisi."""
 
     maturity_score: int = Field(..., ge=0, le=100)
+    base_maturity_score: int = Field(0, ge=0, le=100)
+    score_delta: int = Field(0)
     risk_probability: float = Field(..., ge=0.0, le=1.0)
     risk_percent: int = Field(..., ge=0, le=100)
     risk_band: str
     drivers: list[str] = Field(default_factory=list)
+    adjustment_reasons: list[str] = Field(default_factory=list)
     certificate_available: bool
     # Kapsamlı AI Yol Haritası Raporu — markdown formatında uzun metin
     roadmap_report: str

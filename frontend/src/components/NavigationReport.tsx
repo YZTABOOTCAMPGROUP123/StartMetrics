@@ -16,7 +16,7 @@ export default function NavigationReport({ result }: Props) {
       <p className="panel-cap">Yapay Zekâ Mentor · Dinamik Yol Haritası</p>
 
       <ol className="nav-items">
-        {result.navigation_report.map((item, i) => (
+        {result.navigation_report.slice(0, 3).map((item, i) => (
           <motion.li
             className="nav-item"
             key={i}

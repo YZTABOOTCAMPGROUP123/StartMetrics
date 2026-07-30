@@ -162,7 +162,43 @@ Platformun en büyük ayırt edici gücü, kullanıcıların iş modellerinin ol
 
 <details>
   <summary><h2>Sprint 3</h2><br><em>Detaylar için tıklayınız</em></summary>
-  
+
+- **Sprint Puanları**
+
+   Toplam Backlog Puanı: 274 Puan
+
+   Sprint 3 Hedefi: 70 Puan
+
+- **Sprint Board Durumu**
+
+<!-- BURAYA SPRINT 3 MIRO EKRAN GÖRÜNTÜSÜNÜ EKLENECEK -->
+
+- **Ürün Durumu**
+
+<!-- BURAYA 5. ADIM, BCG MATRİSİ VE KAPSAMLI YAPAY ZEKA RAPORU EKRAN GÖRÜNTÜLERİNİ EKLENECEK -->
+
+- **Sprint Review**: 
+  * Backlog yönetimi için GitHub Projects yerine Miro kullanımına geçilmesi ve geçmiş sprint verilerinin eksiksiz taşınması.
+  * Kullanıcı deneyimini artırmak adına; Skor Kartı ve PDF Sertifika adımının uygulamanın en son aşamasına taşınması.
+  * Vercel canlı ortamında LLM API bağlantılarında yaşanan zaman aşımı hatalarının optimizasyonu ve yeni API anahtarlarıyla çözülmesi.
+  * +10/-10 Metodoloji Puanlama Baraj Sisteminin mantıksal olarak kurularak arayüze (UI) entegre edilmesi.
+  * Kapsamlı AI Raporu ekranlarının ve BCG Matrisi görünümünün modern UI standartlarına göre geliştirilmesi.
+  * Projeden kullanılmayan bağımlılıkların kaldırılarak `requirements.txt` dosyasının optimize edilmesi; hata ayıklama için `/health` ve `/debug_env` endpoint'lerinin oluşturulması.
+  * Makine öğrenmesi canlı QA testleri sonucunda, sistemin ürün-pazar uyumu, haftalık çalışma yorgunluğu ve finansal ömür (runway) gibi konularda ürettiği çıktıların ve tavsiyelerin başarılı çalıştığının doğrulanması.
+  * Bootcamp son teslimi için projenin Github üzerinde herkese açık hale getirilip, 3 dakikalık tanıtım videosunun çekilmesi.
+
+  **Sprint Review Katılımcıları:**
+    - Elif Berber 
+    - Furkan Uysal
+    - Muhammed Esat Demir 
+    - Utku Uyanık
+    - Zeynep Tanrıvermiş
+
+- **Sprint Retrospective:**
+  - Takım içi inisiyatifin ve asenkron iletişimin kriz anlarında süreci kolaylaştıran en önemli faktör olduğunun görülmesi.
+  - Frontend ve Backend geliştirmelerinin birbirinden bağımsız ilerlemesinin Vercel (canlı) ortamında API uyumsuzluklarına yol açabileceği; bu nedenle canlı ortamda debug uç noktalarının projeler için kritik bir gereksinim olduğu.
+  - Kod geliştirme sürecinin teslimden belirli bir süre önce bitirilmesinin, video hazırlığı ve nihai dokümantasyon (README, Miro) üzerindeki son dakika stresini engellediği.
+
   ### 🧠 Makine Öğrenmesi Model Eğitimi ve Kalibrasyon Raporu
 
 StartMetrics platformu, 50.000 girişim verisi üzerinde eğitilmiş, veri sızıntılarından (data leakage) tamamen arındırılmış kararlı bir **Random Forest Classifier** makine öğrenmesi modeli çalıştırmaktadır.

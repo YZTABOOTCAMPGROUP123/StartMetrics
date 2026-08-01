@@ -24,6 +24,7 @@ Girişimcilik ekosistemine yönelik bir vizyonla kurgulanan bu platform; yeni fi
 
 [Problem.pdf](https://github.com/user-attachments/files/30613840/Problem.pdf)
 
+
 ### 💡 En Büyük Fark Yaratan Özelliği:
 Platformun en büyük ayırt edici gücü, kullanıcıların iş modellerinin olgunluk ve güvenilirlik seviyelerini tescilleyen "Dinamik Girişim Olgunluk Skoru" tabanlı "Girişim Güvenirlik Sertifikası" mekanizmasıdır. Bu sertifika platform için organik bir büyüme (viral yayılım) aracı işlevi görür. Girişimcilerin sağlık ve batma riskini, onlarca sayfalık iş planlarıyla boğmadan tek sayfalık dinamik bir raporla ölçen ve yön veren bir analiz motorudur.
 

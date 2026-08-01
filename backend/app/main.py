@@ -13,9 +13,16 @@ modüllerinde; bu dosya sadece istekleri onlara yönlendirir.
 
 from __future__ import annotations
 
+import pathlib
+
 from dotenv import load_dotenv
 
-load_dotenv()  # .env -> ortam değişkenleri (OPENAI_API_KEY vb.)
+# .env dosyasını yalnızca gerçekten varsa yükle.
+# Vercel'de .env dosyası YOKTUR; ortam değişkenleri Vercel Dashboard'dan
+# inject edilir. load_dotenv() dosyayı bulamazsa sessizce geçer ama
+# açıkça kontrol etmek güvenilirliği artırır.
+_env_path = pathlib.Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=_env_path if _env_path.exists() else None)
 
 from fastapi import APIRouter, FastAPI, HTTPException  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
@@ -23,7 +30,14 @@ from fastapi.responses import Response  # noqa: E402
 
 from . import orchestrator, pdf  # noqa: E402
 from .form_config import FORM_CONFIG, get_branch  # noqa: E402
-from .schemas import AnalysisResponse, AnalyzeRequest  # noqa: E402
+from .methodology_adjustments import evaluate_methodology_adjustment  # noqa: E402
+from .scorer import ScoreResult  # noqa: E402
+from .schemas import (  # noqa: E402
+    AnalysisResponse,
+    AnalyzeRequest,
+    ComprehensiveReportRequest,
+    ComprehensiveReportResponse,
+)
 
 
 # Sertifikada gösterilecek veriliş tarihi (Sprint 1 sabiti; now() kullanmıyoruz).
@@ -48,6 +62,31 @@ api = APIRouter(prefix="/api")
 @api.get("/health")
 def health():
     return {"ok": True}
+
+@api.get("/debug-env")
+def debug_env():
+    """Vercel ortam değişkenlerini teşhis etmek için geçici endpoint."""
+    import os
+    from . import llm_client
+
+    api_key = llm_client._get_openai_key()
+
+    env_keys = ["OPENAI_API_KEY", "OPENAI_MODEL"]
+    env_status = {}
+    for k in env_keys:
+        val = os.environ.get(k)
+        if val is None:
+            env_status[k] = "NOT SET"
+        elif val == "":
+            env_status[k] = "EMPTY STRING"
+        else:
+            env_status[k] = f"SET (len={len(val)}, starts='{val[:4]}...')"
+
+    return {
+        "api_key_found": bool(api_key),
+        "api_key_length": len(api_key) if api_key else 0,
+        "env_status": env_status,
+    }
 
 
 @api.get("/config")
@@ -91,6 +130,140 @@ def certificate(req: AnalyzeRequest):
         content=data,
         media_type="application/pdf",
         headers={"Content-Disposition": "attachment; filename=startmetrics_sertifika.pdf"},
+    )
+
+
+@api.post("/comprehensive-report", response_model=ComprehensiveReportResponse)
+def comprehensive_report(req: ComprehensiveReportRequest):
+    """Adım 5: Tüm adımların verisini birleştirerek kapsamlı AI yol haritası üretir.
+
+    - Adım 1 verisiyle ML modeli çalıştırılır (skor + risk).
+    - Metodoloji cevaplarıyla +10 / -10 skor baraj ayarı yapılır.
+    - Tüm veri (Adım 1 + Metodoloji 1 + Metodoloji 2) Gemini'ye gönderilir.
+    - Kapsamlı markdown rapor + ML skoru döndürülür.
+    """
+    from . import llm_client, scorer
+    from .orchestrator import _clean, CERT_MIN_MATURITY, CERT_MAX_RISK
+
+    try:
+        # ML skoru üret (Adım 1 verisiyle)
+        features = _clean(req.branch, req.step1_answers)
+        base_score_result = scorer.score(features)
+
+        # Metodoloji ayarını hesapla (+10 / -10)
+        adjustment = evaluate_methodology_adjustment(
+            req.branch,
+            req.methodology1_answers,
+            req.methodology2_answers,
+        )
+        score_result = _apply_score_adjustment(base_score_result, adjustment.delta)
+
+        # Kapsamlı AI raporu üret (tüm adımlar birleştirilir)
+        report = llm_client.generate_comprehensive_report(
+            branch=req.branch,
+            step1_answers=features,
+            methodology1_answers=req.methodology1_answers,
+            methodology2_answers=req.methodology2_answers,
+            score_result=score_result,
+        )
+
+        certificate_available = (
+            score_result.maturity_score > CERT_MIN_MATURITY
+            and score_result.risk_probability < CERT_MAX_RISK
+        )
+
+        return ComprehensiveReportResponse(
+            maturity_score=score_result.maturity_score,
+            base_maturity_score=base_score_result.maturity_score,
+            score_delta=adjustment.delta,
+            risk_probability=score_result.risk_probability,
+            risk_percent=round(score_result.risk_probability * 100),
+            risk_band=score_result.risk_band,
+            drivers=score_result.drivers,
+            adjustment_reasons=adjustment.reasons,
+            certificate_available=certificate_available,
+            roadmap_report=report["roadmap"],
+            report_source=report["source"],
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@api.post("/certificate-from-comprehensive")
+def certificate_from_comprehensive(req: ComprehensiveReportRequest):
+    """Adım 5'ten sertifika indir (kapsamlı rapor verisiyle)."""
+    from . import llm_client, scorer
+    from .orchestrator import _clean, CERT_MIN_MATURITY, CERT_MAX_RISK
+
+    try:
+        features = _clean(req.branch, req.step1_answers)
+        base_score_result = scorer.score(features)
+        adjustment = evaluate_methodology_adjustment(
+            req.branch,
+            req.methodology1_answers,
+            req.methodology2_answers,
+        )
+        score_result = _apply_score_adjustment(base_score_result, adjustment.delta)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    certificate_available = (
+        score_result.maturity_score > CERT_MIN_MATURITY
+        and score_result.risk_probability < CERT_MAX_RISK
+    )
+
+    if not certificate_available:
+        raise HTTPException(
+            status_code=403,
+            detail="Sertifika için Olgunluk Skoru 75 üstü ve risk düşük olmalı.",
+        )
+
+    # AnalysisResponse benzeri bir nesne oluşturup pdf modülüne ver
+    from .schemas import AnalysisResponse, NavigationItem
+    mock_result = AnalysisResponse(
+        maturity_score=score_result.maturity_score,
+        risk_probability=score_result.risk_probability,
+        risk_percent=round(score_result.risk_probability * 100),
+        risk_band=score_result.risk_band,
+        drivers=score_result.drivers,
+        navigation_report=[],
+        certificate_available=True,
+        report_source="ml",
+    )
+
+    branch_title = get_branch(req.branch)["title"]
+    data = pdf.build_certificate(mock_result, branch_title, ISSUED_DATE)
+    return Response(
+        content=data,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=startmetrics_sertifika.pdf"},
+    )
+
+
+
+def _apply_score_adjustment(result: ScoreResult, delta: int) -> ScoreResult:
+    maturity = max(0, min(100, result.maturity_score + delta))
+    risk_probability = round(max(0.01, min(0.99, result.risk_probability - (delta / 200))), 2)
+    if risk_probability < 0.34:
+        risk_band = "Düşük"
+    elif risk_probability < 0.67:
+        risk_band = "Orta"
+    else:
+        risk_band = "Yüksek"
+
+    drivers = list(result.drivers)
+    if delta > 0:
+        drivers.append(f"Metodoloji cevapları final skora +{delta} puan katkıda bulundu.")
+    elif delta < 0:
+        drivers.append(f"Metodoloji cevapları final skoru {delta} puan aşağı çekti.")
+    else:
+        drivers.append("Metodoloji cevapları final skoru sabit tuttu.")
+
+    return ScoreResult(
+        maturity_score=maturity,
+        risk_probability=risk_probability,
+        risk_band=risk_band,
+        drivers=drivers,
     )
 
 

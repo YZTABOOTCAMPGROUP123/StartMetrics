@@ -5,11 +5,23 @@
   "outputDirectory": "frontend/dist",
   "functions": {
     "api/index.py": {
+      "maxDuration": 30,
       "excludeFiles": "{data/**,genel_bilgiler/**,frontend/node_modules/**,frontend/dist/**,backend/.venv/**,**/__pycache__/**}"
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
-  ]
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ],
+    "env": {
+    "LLM_PROVIDER": "openai"
+  }
 }
+
+

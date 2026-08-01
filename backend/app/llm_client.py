@@ -1,20 +1,17 @@
 """
-llm_client.py — AI Yön Raporu üretici (OpenAI + sağlayıcı-bağımsız + stub fallback).
+llm_client.py — AI Yön Raporu üretici (Vercel Optimize Edilmiş)
 
-Sorumluluk: skorlayıcının çıktısını ve ~8-10 alanı bir Türkçe mentor prompt'una
-gömüp LLM'den TAM 3 maddelik Waze/GPS tarzı bir navigasyon raporu almak.
-
-Token tasarrufu: prompt'a SADECE alanlar + skor girer; ASLA CSV satırı girmez.
-max_tokens düşük tutulur, tıklama başına tek çağrı yapılır.
-
-Dayanıklılık: API anahtarı yoksa VEYA çağrı/parse hatası olursa `_stub_report`
-devreye girer — demo asla çökmez, UI birebir aynı görünür (report_source="stub").
+Sorumluluk: Skorlayıcının çıktısını ve alanları Türkçe mentor prompt'una
+gömüp OpenAI'dan navigasyon raporu almak. Sadece Vercel Environment Variables
+(Ortam Değişkenleri) üzerinden çalışır.
 """
 
 from __future__ import annotations
 
 import json
 import os
+import sys
+import traceback
 
 from .scorer import ScoreResult
 
@@ -32,43 +29,82 @@ SYSTEM_PROMPT = (
 )
 
 
-def generate_report(branch: str, features: dict, result: ScoreResult) -> dict:
-    """3 maddelik navigasyon raporu üretir.
-
-    Returns:
-        {"items": [{"title","body"} x3], "source": "llm" | "stub"}
-    Bu fonksiyon hiçbir zaman exception fırlatmaz; hata durumunda stub'a düşer.
+def _get_openai_key() -> str | None:
     """
-    provider = os.getenv("LLM_PROVIDER", "openai").lower()
-    api_key = (
-        os.getenv("OPENAI_API_KEY")
-        or os.getenv("ANTHROPIC_API_KEY")
-        or os.getenv("GEMINI_API_KEY")
-    )
+    OPENAI_API_KEY ortam değişkenini okur.
+    Vercel Dashboard'dan veya lokal .env'den gelir.
+
+    Güvenlik: Vercel'de yanlış yapıştırma sonucu anahtar birden fazla kez
+    tekrarlanabilir (newline ile ayrılmış). Bu durumda sadece ilk kopyayı alır
+    ve tüm boşluk/newline karakterlerini temizler.
+    """
+    raw = os.environ.get("OPENAI_API_KEY")
+    if raw is not None:
+        # Newline, carriage-return ve boşlukları temizle
+        key = raw.strip()
+        if key:
+            # Eğer anahtar newline ile tekrarlanmışsa sadece ilk kopyayı al
+            if "\n" in key:
+                print(
+                    f"[llm_client] UYARI: OPENAI_API_KEY içinde newline bulundu, "
+                    f"sadece ilk satır kullanılacak (toplam {len(key)} karakter)",
+                    file=sys.stderr,
+                )
+                key = key.split("\n")[0].strip()
+            if "\r" in key:
+                key = key.split("\r")[0].strip()
+
+            if key:
+                print(
+                    f"[llm_client] OpenAI key found (len={len(key)}, "
+                    f"starts='{key[:8]}...')",
+                    file=sys.stderr,
+                )
+                return key
+
+        print("[llm_client] OPENAI_API_KEY set but EMPTY after sanitization", file=sys.stderr)
+
+    print("[llm_client] OPENAI_API_KEY not found — falling back to stub", file=sys.stderr)
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Navigasyon Raporu (3 madde)
+# ---------------------------------------------------------------------------
+
+def generate_report(branch: str, features: dict, result: ScoreResult) -> dict:
+    """3 maddelik navigasyon raporu üretir."""
+    api_key = _get_openai_key()
 
     if not api_key:
         return _stub_report(result)
 
     try:
         user_prompt = _build_user_prompt(branch, features, result)
-        if provider == "openai":
-            text = _call_openai(user_prompt)
-        elif provider == "anthropic":
-            text = _call_anthropic(user_prompt)
-        else:
-            # Gemini vb. henüz eklenmedi -> güvenli stub
-            return _stub_report(result)
-
+        text = _call_openai(user_prompt, api_key)
         items = _parse_three_items(text)
         return {"items": items, "source": "llm"}
-    except Exception:
-        # Ağ/parse/kota — ne olursa olsun demo çalışsın.
-        return _stub_report(result)
+    
+    except Exception as e:
+        print(
+            f"[llm_client] HATA: {type(e).__name__}: {e}",
+            file=sys.stderr,
+        )
+        traceback.print_exc(file=sys.stderr)
+        # Kök nedeni de logla (örn. LocalProtocolError)
+        cause = e.__cause__ or e.__context__
+        if cause:
+            print(
+                f"[llm_client] KÖK NEDEN: {type(cause).__name__}: {cause}",
+                file=sys.stderr,
+            )
+        stub = _stub_report(result)
+        stub["items"][0]["title"] = "SİSTEM HATASI"
+        stub["items"][0]["body"] = f"Hata Detayı: {type(e).__name__} - {str(e)}"
+        return stub
 
 
 def _build_user_prompt(branch: str, features: dict, result: ScoreResult) -> str:
-    """Prompt'a sadece askable alanlar + skor girer (CSV satırı ASLA)."""
-    # Dahili yardımcı anahtarları (alt çizgiyle başlayan) prompt'a koyma.
     public = {k: v for k, v in features.items() if not k.startswith("_")}
     return (
         f"Dal: {branch}\n"
@@ -80,11 +116,29 @@ def _build_user_prompt(branch: str, features: dict, result: ScoreResult) -> str:
     )
 
 
-def _call_openai(user_prompt: str) -> str:
+def _call_openai(user_prompt: str, api_key: str) -> str:
     from openai import OpenAI
 
-    client = OpenAI()  # OPENAI_API_KEY env'den okunur
-    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    # Son savunma hattı: key içinde whitespace/newline kalmamalı
+    clean_key = api_key.strip().replace("\n", "").replace("\r", "")
+    if clean_key != api_key:
+        print(
+            "[llm_client] UYARI: _call_openai'da key'de fazladan boşluk/newline temizlendi",
+            file=sys.stderr,
+        )
+
+    client = OpenAI(
+        api_key=clean_key,
+        timeout=25.0,        # maxDuration=30 ile uyumlu
+        max_retries=2,
+    )
+    model = os.environ.get("OPENAI_MODEL", "gpt-4o")
+
+    print(
+        f"[llm_client] OpenAI çağrısı: model={model}, key_len={len(clean_key)}",
+        file=sys.stderr,
+    )
+
     resp = client.chat.completions.create(
         model=model,
         max_tokens=400,
@@ -97,23 +151,7 @@ def _call_openai(user_prompt: str) -> str:
     return resp.choices[0].message.content or ""
 
 
-def _call_anthropic(user_prompt: str) -> str:
-    import anthropic
-
-    client = anthropic.Anthropic()  # ANTHROPIC_API_KEY env'den okunur
-    model = os.getenv("ANTHROPIC_MODEL", "claude-haiku-4-5")
-    msg = client.messages.create(
-        model=model,
-        max_tokens=400,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_prompt}],
-    )
-    return "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")
-
-
 def _parse_three_items(text: str) -> list[dict]:
-    """LLM çıktısından tam 3 {title, body} maddesi çıkar."""
-    # Model bazen ```json ... ``` sarabilir; en dıştaki diziyi yakala.
     start = text.find("[")
     end = text.rfind("]")
     if start == -1 or end == -1:
@@ -121,6 +159,7 @@ def _parse_three_items(text: str) -> list[dict]:
     items = json.loads(text[start : end + 1])
     if not isinstance(items, list) or len(items) < 3:
         raise ValueError("En az 3 madde bekleniyordu")
+    
     cleaned = []
     for it in items[:3]:
         cleaned.append(
@@ -133,11 +172,10 @@ def _parse_three_items(text: str) -> list[dict]:
 
 
 def _stub_report(result: ScoreResult) -> dict:
-    """Anahtar/erişim yokken deterministik 3 maddelik rapor (drivers'tan)."""
     titles = ["Nakit Rotası", "Ekip Sağlığı", "Pazar Yönü"]
     drivers = result.drivers or ["Veriler dengeli, rotan şimdilik açık."]
-
     items: list[dict] = []
+    
     for i in range(3):
         driver = drivers[i] if i < len(drivers) else None
         if driver:
@@ -145,5 +183,155 @@ def _stub_report(result: ScoreResult) -> dict:
         else:
             body = "Rota temiz görünüyor; bir sonraki 5 müşteri görüşmeni planla."
         items.append({"title": titles[i], "body": body})
-
+        
     return {"items": items, "source": "stub"}
+
+
+# ===========================================================================
+# Kapsamlı Yol Haritası Raporu (Adım 5)
+# ===========================================================================
+
+COMPREHENSIVE_SYSTEM_PROMPT = (
+    "Sen StartMetrics platformunun strateji danışmanısın. Bir girişimcinin 4 aşamalık "
+    "analiz sürecinden elde edilen verilere bakarak kapsamlı, kişiselleştirilmiş ve "
+    "uygulanabilir bir stratejik yol haritası raporu yazacaksın. "
+    "Rapor Türkçe olacak. Markdown formatında olacak (## başlıklar, - madde işaretleri). "
+    "Şu bölümleri içermelidir: "
+    "## 🎯 Genel Değerlendirme (2-3 cümle özet), "
+    "## 💡 Kritik Bulgular (en önemli 3-5 tespit), "
+    "## 🗺️ 30 Günlük Eylem Planı (somut adımlar), "
+    "## 🚀 90 Günlük Büyüme Rotası (stratejik yönelim), "
+    "## ⚠️ Öncelikli Riskler ve Çözüm Önerileri. "
+    "Genel tavsiyeler değil, VERİLERE ÖZGÜ, uygulanabilir öneriler ver. "
+    "Motivasyon konuşması yapma."
+)
+
+
+def generate_comprehensive_report(
+    branch: str,
+    step1_answers: dict,
+    methodology1_answers: dict,
+    methodology2_answers: dict,
+    score_result: ScoreResult,
+) -> dict:
+    
+    api_key = _get_openai_key()
+
+    if not api_key:
+        return _stub_comprehensive_report(score_result)
+
+    try:
+        user_prompt = _build_comprehensive_prompt(
+            branch, step1_answers, methodology1_answers, methodology2_answers, score_result
+        )
+        text = _call_openai_comprehensive(user_prompt, api_key)
+        return {"roadmap": text.strip(), "source": "llm"}
+    
+    except Exception as e:
+        print(
+            f"[llm_client] KAPSAMLI RAPOR HATASI: {type(e).__name__}: {e}",
+            file=sys.stderr,
+        )
+        traceback.print_exc(file=sys.stderr)
+        cause = e.__cause__ or e.__context__
+        if cause:
+            print(
+                f"[llm_client] KÖK NEDEN: {type(cause).__name__}: {cause}",
+                file=sys.stderr,
+            )
+        stub = _stub_comprehensive_report(score_result)
+        hata_mesaji = f"\n\n### 🚨 HATA DETAYI (Geliştirici Logu)\n**Hata Türü:** `{type(e).__name__}`\n**Açıklama:** `{str(e)}`"
+        stub["roadmap"] = hata_mesaji + "\n\n" + stub["roadmap"]
+        return stub
+
+
+def _build_comprehensive_prompt(branch: str, step1: dict, metho1: dict, metho2: dict, result: ScoreResult) -> str:
+    public_step1 = {k: v for k, v in step1.items() if not k.startswith("_")}
+    branch_labels = {
+        "fikrim_var": "Fikrim Var (Pre-Seed)",
+        "startup_var": "Startup'ım Var (Seed)",
+        "sirketim_var": "Şirketim Var (Bootstrapped)",
+    }
+
+    return (
+        f"Kategori: {branch_labels.get(branch, branch)}\n\n"
+        f"=== ADIM 1: Kullanıcı Profili ===\n{json.dumps(public_step1, ensure_ascii=False, indent=2)}\n\n"
+        f"=== ML ANALİZ SONUCU ===\n"
+        f"Olgunluk Skoru: {result.maturity_score}/100\n"
+        f"Risk: %{round(result.risk_probability * 100)} ({result.risk_band})\n"
+        f"Temel Sinyaller: {', '.join(result.drivers)}\n\n"
+        f"=== ADIM 3: Metodoloji Formu-1 ===\n{json.dumps(metho1, ensure_ascii=False, indent=2)}\n\n"
+        f"=== ADIM 4: Metodoloji Formu-2 ===\n{json.dumps(metho2, ensure_ascii=False, indent=2)}\n\n"
+        f"Yukarıdaki tüm verileri analiz ederek kapsamlı stratejik yol haritası raporunu yaz."
+    )
+
+
+def _call_openai_comprehensive(user_prompt: str, api_key: str) -> str:
+    from openai import OpenAI
+
+    # Son savunma hattı: key içinde whitespace/newline kalmamalı
+    clean_key = api_key.strip().replace("\n", "").replace("\r", "")
+    if clean_key != api_key:
+        print(
+            "[llm_client] UYARI: _call_openai_comprehensive'da key temizlendi",
+            file=sys.stderr,
+        )
+
+    client = OpenAI(
+        api_key=clean_key,
+        timeout=25.0,        # maxDuration=30 ile uyumlu
+        max_retries=2,
+    )
+    model = os.environ.get("OPENAI_MODEL", "gpt-4o")
+
+    print(
+        f"[llm_client] Kapsamlı rapor çağrısı: model={model}, key_len={len(clean_key)}",
+        file=sys.stderr,
+    )
+
+    resp = client.chat.completions.create(
+        model=model,
+        max_tokens=1500,
+        temperature=0.6,
+        messages=[
+            {"role": "system", "content": COMPREHENSIVE_SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
+        ],
+    )
+    return resp.choices[0].message.content or ""
+
+
+def _stub_comprehensive_report(result: ScoreResult) -> dict:
+    score = result.maturity_score
+    band = result.risk_band
+    drivers_text = "\n".join(f"- {d}" for d in result.drivers) if result.drivers else "- Belirgin sinyal yok."
+
+    roadmap = f"""## 🎯 Genel Değerlendirme
+
+Girişiminizin Olgunluk Skoru **{score}/100** olarak hesaplanmıştır. Risk bandı **{band}** seviyesindedir. Bu rapor, girişiminizin mevcut durumunu özetlemekte ve öncelikli aksiyon adımlarını içermektedir.
+
+## 💡 Kritik Bulgular
+
+{drivers_text}
+
+## 🗺️ 30 Günlük Eylem Planı
+
+- **Hafta 1-2:** Temel riskleri önceliklendirin ve hızlı kazanımlar için fırsatları belirleyin.
+- **Hafta 3-4:** Müşteri doğrulama süreçlerini güçlendirin ve geri bildirim döngüsü kurun.
+- Metodoloji formlarınızda belirttiğiniz varsayımları en az 5 gerçek müşteri görüşmesiyle test edin.
+
+## 🚀 90 Günlük Büyüme Rotası
+
+- **Ay 1:** Ürün-pazar uyumunu doğrulayacak minimum ölçülebilir deney tasarlayın.
+- **Ay 2:** İlk 10 sadık kullanıcıyı kazanın ve onların geri bildirimlerini ürüne yansıtın.
+- **Ay 3:** Büyüme kanallarınızı test edin ve en düşük maliyetli kanalı ölçeklendirin.
+
+## ⚠️ Öncelikli Riskler ve Çözüm Önerileri
+
+- **Risk:** Pazar doğrulaması henüz tamamlanmamış olabilir. **Çözüm:** Ödeme yapan ilk müşteri veya LOI (İlgi Mektubu) almadan kaynak harcamayı minimumda tutun.
+- **Risk:** Ekip kapasitesi sınırlı. **Çözüm:** Kritik olmayan görevleri erteleyerek tek bir önceliğe odaklanın.
+
+---
+*Bu rapor otomatik olarak oluşturulmuştur. Kapsamlı AI analizi için geçerli bir API anahtarı yapılandırın.*
+"""
+    return {"roadmap": roadmap, "source": "stub"}

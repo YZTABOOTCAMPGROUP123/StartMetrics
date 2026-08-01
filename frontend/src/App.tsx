@@ -192,7 +192,9 @@ export default function App() {
             kişiselleştirilmiş AI yol haritanı al. Nerede olduğunu seç — sana yol gösterelim.
           </motion.p>
 
-          {error && <div className="error-banner">{error}</div>}
+          <AnimatePresence>
+            {error && <PremiumError error={error} onClose={() => setError(null)} />}
+          </AnimatePresence>
 
           <div className="branch-grid">
             {config &&
@@ -280,7 +282,9 @@ export default function App() {
         </div>
         <p className="branch-sub">{BRANCH_TONE[branch]}</p>
 
-        {error && <div className="error-banner">{error}</div>}
+        <AnimatePresence>
+          {error && <PremiumError error={error} onClose={() => setError(null)} />}
+        </AnimatePresence>
 
         <AnimatePresence mode="wait">
           {/* Adım 1: Kullanıcı Bilgi Formu */}

@@ -18,7 +18,12 @@ StartMetrics
 
 ## Ürün Açıklaması
 
-Bu proje; yeni bir iş fikri olan girişimcilerin, start-up kurucularının ve mevcut şirketlerin, iş modellerinin durumlarını, kullanıcı profilleri ve daha önce başarılı olmuş olan, girişimcilik dünyasında kabul görmüş teorik yol haritaları kalıpları ile kullanıcı iş modellerinin analizleri sağlnanan akıllı bir platformdur. Bu platformun amacı, kullanıcıların süreçlerini öngörülebilir kılmak ve başarısızlık risklerini en aza indirgemektir. 
+Girişimcilik ekosistemine yönelik bir vizyonla kurgulanan bu platform; yeni fikirlere, start-up'lara ve küçük ölçekli işletmelere kapsamlı bir yol haritası sunar. Mevcut sorunlara reaktif çözümler üretmek yerine, gelecekte karşılaşılabilecek olası risklere karşı farkındalık yaratmayı ve kuruculara çok boyutlu bir bakış açısı kazandırmayı amaçlayan proaktif bir rehberlik platformudur. 
+
+## Hangi Probleme Çözüm Üretiyor?
+
+[Problem.pdf](https://github.com/user-attachments/files/30613840/Problem.pdf)
+
 
 ### 💡 En Büyük Fark Yaratan Özelliği:
 Platformun en büyük ayırt edici gücü, kullanıcıların iş modellerinin olgunluk ve güvenilirlik seviyelerini tescilleyen "Dinamik Girişim Olgunluk Skoru" tabanlı "Girişim Güvenirlik Sertifikası" mekanizmasıdır. Bu sertifika platform için organik bir büyüme (viral yayılım) aracı işlevi görür. Girişimcilerin sağlık ve batma riskini, onlarca sayfalık iş planlarıyla boğmadan tek sayfalık dinamik bir raporla ölçen ve yön veren bir analiz motorudur.
@@ -58,7 +63,7 @@ Platformun en büyük ayırt edici gücü, kullanıcıların iş modellerinin ol
 ---
 
 <details>
-  <summary><h2>Sprint 1</h2></summary>
+  <summary><h2>Sprint 1</h2><br><em>Detaylar için tıklayınız</em></summary>
 
 - **Sprint Puanları**
 
@@ -105,15 +110,133 @@ Platformun en büyük ayırt edici gücü, kullanıcıların iş modellerinin ol
 
 
 <details>
-  <summary><h2>Sprint 2</h2></summary>
+  <summary><h2>Sprint 2</h2><br><em>Detaylar için tıklayınız</em></summary>
+
+- **Sprint Puanları**
+
+   Toplam Backlog Puanı: 274 Puan
+
+   Sprint 2 Hedefi: 104 Puan
+
+- **Sprint Board Durumu**
+
+<img width="2376" height="2988" alt="startmetrics_sprint2" src="https://github.com/user-attachments/assets/117b99d8-b398-497b-bd8a-7ad6b0a5dcf0" />
 
 
+- **Ürün Durumu**
+
+
+<img width="3024" height="1764" alt="screencapture-start-metrics-git-utkuynk-start-metrics-vercel-app-2026-07-19-17_18_29" src="https://github.com/user-attachments/assets/60e635ac-d378-4167-ae2c-86026f8c6831" />
+<img width="3024" height="1798" alt="screencapture-start-metrics-git-utkuynk-start-metrics-vercel-app-2026-07-19-17_18_37" src="https://github.com/user-attachments/assets/6a076a8d-5d14-4eae-bdc2-d7ad1c1d7142" />
+<img width="3024" height="2014" alt="screencapture-start-metrics-git-utkuynk-start-metrics-vercel-app-2026-07-19-17_19_08" src="https://github.com/user-attachments/assets/4047db08-2300-4cde-953f-32004c602670" />
+<img width="3024" height="2582" alt="screencapture-start-metrics-git-utkuynk-start-metrics-vercel-app-2026-07-19-17_19_15" src="https://github.com/user-attachments/assets/f60aa390-32f0-4f5c-ac74-7a01cf12ed73" />
+<img width="3024" height="2316" alt="screencapture-start-metrics-git-utkuynk-start-metrics-vercel-app-2026-07-19-17_19_32" src="https://github.com/user-attachments/assets/9219f961-89b2-4440-b8ca-cc7236856c27" />
+<img width="3024" height="4596" alt="screencapture-start-metrics-git-utkuynk-start-metrics-vercel-app-2026-07-19-17_19_57" src="https://github.com/user-attachments/assets/aeb00150-58ce-4c3b-ad5a-21bf72a47cac" />
+
+
+
+
+
+
+
+
+- **Sprint Review**: 
+  * Birden fazla Yapay Zeka Platformunun desteğinin eklenmesinin başlanması
+  * Backlog için Github Projects'in yetersiz olduğuna karar verilmesi
+  * Github PR özelliğinin Vercel alt yapısıyla aktif kullanımı
+  * Github Projects Backlog görüntüsünün asistan geri dönütü üzerine güncellenmesi
+  * Sprint kısımlarının açıp kapanılabilir olduğunun asistan geri dönütü üzerine güncellenmesi
+  * Vercel'de deploy edilen previewların herkes tarafından erişilebilir yapılması
+  * Proje içerisinde test dosyalarının oluşturulması
+  * Proje içerisindeki formların geliştirilmesi
+
+  **Sprint Review Katılımcıları:**
+    - Elif Berber 
+    - Furkan Uysal
+    - Muhammed Esat Demir 
+    - Utku Uyanık
+    - Zeynep Tanrıvermiş
+
+- **Sprint Retrospective:**
+  - Github Projects'in Viewları tek bir veri setine bağlı olduğundan yetersiz olduğunun anlaşılması
+  - Main branşa dökümantasyon geliştirilmeleri dışında review atılmadan commit yapılmaması
+  - Hibrit yapının ilk adımlarının preview özelliği ile bu [bağlantıdan](https://start-metrics-git-utkuynk-start-metrics.vercel.app/) erişilebilir yapılması
 
 </details>
 
 
 <details>
-  <summary><h2>Sprint 3</h2></summary>
+  <summary><h2>Sprint 3</h2><br><em>Detaylar için tıklayınız</em></summary>
+
+- **Sprint Puanları**
+
+   Toplam Backlog Puanı: 274 Puan
+
+   Sprint 3 Hedefi: 70 Puan
+
+- **Sprint Board Durumu**
+
+<!-- BURAYA SPRINT 3 MIRO EKRAN GÖRÜNTÜSÜNÜ EKLENECEK -->
+
+- **Ürün Durumu**
+
+<!-- BURAYA 5. ADIM, BCG MATRİSİ VE KAPSAMLI YAPAY ZEKA RAPORU EKRAN GÖRÜNTÜLERİNİ EKLENECEK -->
+
+- **Sprint Review**: 
+  * Backlog yönetimi için GitHub Projects yerine Miro kullanımına geçilmesi ve geçmiş sprint verilerinin eksiksiz taşınması.
+  * Kullanıcı deneyimini artırmak adına; Skor Kartı ve PDF Sertifika adımının uygulamanın en son aşamasına taşınması.
+  * Vercel canlı ortamında LLM API bağlantılarında yaşanan zaman aşımı hatalarının optimizasyonu ve yeni API anahtarlarıyla çözülmesi.
+  * +10/-10 Metodoloji Puanlama Baraj Sisteminin mantıksal olarak kurularak arayüze (UI) entegre edilmesi.
+  * Kapsamlı AI Raporu ekranlarının ve BCG Matrisi görünümünün modern UI standartlarına göre geliştirilmesi.
+  * Projeden kullanılmayan bağımlılıkların kaldırılarak `requirements.txt` dosyasının optimize edilmesi; hata ayıklama için `/health` ve `/debug_env` endpoint'lerinin oluşturulması.
+  * Makine öğrenmesi canlı QA testleri sonucunda, sistemin ürün-pazar uyumu, haftalık çalışma yorgunluğu ve finansal ömür (runway) gibi konularda ürettiği çıktıların ve tavsiyelerin başarılı çalıştığının doğrulanması.
+  * Bootcamp son teslimi için projenin Github üzerinde herkese açık hale getirilip, 3 dakikalık tanıtım videosunun çekilmesi.
+
+  **Sprint Review Katılımcıları:**
+    - Elif Berber 
+    - Furkan Uysal
+    - Muhammed Esat Demir 
+    - Utku Uyanık
+    - Zeynep Tanrıvermiş
+
+- **Sprint Retrospective:**
+  - Takım içi inisiyatifin ve asenkron iletişimin kriz anlarında süreci kolaylaştıran en önemli faktör olduğunun görülmesi.
+  - Frontend ve Backend geliştirmelerinin birbirinden bağımsız ilerlemesinin Vercel (canlı) ortamında API uyumsuzluklarına yol açabileceği; bu nedenle canlı ortamda debug uç noktalarının projeler için kritik bir gereksinim olduğu.
+  - Kod geliştirme sürecinin teslimden belirli bir süre önce bitirilmesinin, video hazırlığı ve nihai dokümantasyon (README, Miro) üzerindeki son dakika stresini engellediği.
+
+  ### 🧠 Makine Öğrenmesi Model Eğitimi ve Kalibrasyon Raporu
+
+StartMetrics platformu, 50.000 girişim verisi üzerinde eğitilmiş, veri sızıntılarından (data leakage) tamamen arındırılmış kararlı bir **Random Forest Classifier** makine öğrenmesi modeli çalıştırmaktadır.
+
+#### 1. Model Başarım ve Kalibrasyon Metrikleri
+
+| Metrik Türü | Başarım Oranı | Açıklama |
+| :--- | :--- | :--- |
+| **Train Seti Accuracy** | **%89.33** | Eğitilen verideki doğruluk oranı. |
+| **Test Seti Accuracy** | **%87.35** | Görülmemiş test verisindeki doğruluk oranı. Train/Test farkı %1.98 olup **Overfitting yoktur**. |
+| **5-Fold CV Accuracy** | **%87.72 (±%0.43)** | Katmanlar arası standart sapması son derece düşük, kararlı model göstergesi. |
+| **Test ROC-AUC Skoru** | **0.9305** | Modelin "Başarılı" ve "Batma Riski" olan şirketleri ayırt etme yeteneği mükemmel seviyededir. |
+| **Batma Riski Precision**| **%82.00** | Model bir girişime "Batma Riski Var" dediğinde %82 oranında haklıdır (Yanlış alarm oranı %18). |
+| **Batma Riski Recall** | **%60.00** | Gerçekte batacak olan girişimlerin %60'ı ham form girdilerinden başarıyla öngörülmektedir. |
+
+#### 2. Sınıflandırma Detay Raporu (Classification Report)
+
+                     precision    recall  f1-score   support
+    
+       Başarılı (0)       0.88      0.96      0.92      7627
+    Batma Riski (1)       0.82      0.60      0.69      2373
+    
+           accuracy                           0.87     10000
+          macro avg       0.85      0.78      0.81     10000
+       weighted avg       0.87      0.87      0.87     10000
+
+#### 3. Model Doğrulama ve Kalibrasyon Eğrisi (ROC-AUC)
+
+![Model Kalibrasyon Eğrisi](./model_egitimi/model_calibration_roc.png)
+
+#### 4. Model Açıklanabilirliği (Explainable AI - XAI / Feature Importance)
+
+![Feature Importance Görseli](./model_egitimi/feature_importance.png)
 
 </details>
 

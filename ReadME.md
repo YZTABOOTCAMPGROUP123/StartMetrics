@@ -22,22 +22,7 @@ Girişimcilik ekosistemine yönelik bir vizyonla kurgulanan bu platform; yeni fi
 
 ## Hangi Probleme Çözüm Üretiyor?
 
-Dünyadaki Durum: 
-
-Dünya genelinde her yıl kurulan girişim ve işletme sayısı 150 milyon üzerindedir. Ancak bunun yalnızca 3.5 ile 5 milyonu teknoloji, yazılım veya inovasyon odaklı “startup” statüsündedir. ABD tek başına yıllık ortalama 1,5 milyon üzerinde yeni tescilli girişim ile bu ekosistemin lideridir.  
-
-Yıllara Göre Elenme Süreci (ABD İşçi İstatistikleri Bürosu): 
-- Yıl Sonu: Girişimlerin yaklaşık %20'si kapanır. 
-
-- Yıl Sonu: Başarısızlık oranı %30'a ulaşır. 
-
-- Yıl Sonu: Girişimlerin %50'si elenir. 
-
-- Yıl Sonu: Girişimlerin %70 ila %80'i faaliyetlerini sonlandırmış olur. 
-
-- Unicorn (1 Milyar $ Değerleme) Olma Oranı: Sadece %1 civarındadır. 
-
-Küresel Başarısızlık Nedenleri: CB Insights verilerine göre en büyük neden %42 ile "pazarın o ürüne/hizmete ihtiyacının olmaması" (Market-Fit eksikliği). İkinci sırada ise %29 ile "nakdin tükenmesi" geliyor.  
+[Problem.pdf](https://github.com/user-attachments/files/30613840/Problem.pdf)
 
 ### 💡 En Büyük Fark Yaratan Özelliği:
 Platformun en büyük ayırt edici gücü, kullanıcıların iş modellerinin olgunluk ve güvenilirlik seviyelerini tescilleyen "Dinamik Girişim Olgunluk Skoru" tabanlı "Girişim Güvenirlik Sertifikası" mekanizmasıdır. Bu sertifika platform için organik bir büyüme (viral yayılım) aracı işlevi görür. Girişimcilerin sağlık ve batma riskini, onlarca sayfalık iş planlarıyla boğmadan tek sayfalık dinamik bir raporla ölçen ve yön veren bir analiz motorudur.

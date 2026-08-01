@@ -11,6 +11,7 @@ hiçbir hata fırlatmadan tam deterministik kural tabanlı modele (Fallback) ger
 from __future__ import annotations
 
 import os
+import sys
 from dataclasses import dataclass, field
 import joblib
 import pandas as pd

@@ -360,28 +360,3 @@ interface PremiumErrorProps {
   error: string;
   onClose: () => void;
 }
-
-function PremiumError({ error, onClose }: PremiumErrorProps) {
-  return (
-    <motion.div
-      className="error-banner-premium"
-      initial={{ opacity: 0, y: -12, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -12, scale: 0.97 }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
-    >
-      <div className="error-icon">
-        <svg width="22" height="22" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M10 13V13.01M10 7V10M18 10C18 14.4183 14.4183 18 10 18C5.58172 18 2 14.4183 2 10C2 5.58172 5.58172 2 10 2C14.4183 2 18 5.58172 18 10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </div>
-      <div className="error-content-wrapper">
-        <h4>Doğrulama Hatası</h4>
-        <p>{error}</p>
-      </div>
-      <button className="error-close" onClick={onClose} title="Kapat">
-        ×
-      </button>
-    </motion.div>
-  );
-}
